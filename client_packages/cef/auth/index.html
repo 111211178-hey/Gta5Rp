@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background"></div>
+    
+    <div class="auth-container">
+        <div class="logo">
+            <h1>GTA5 RAGE MP</h1>
+            <p>Система авторизации</p>
+        </div>
+        
+        <!-- Форма входа -->
+        <div class="form-container" id="loginForm">
+            <h2>Вход</h2>
+            
+            <div class="input-group">
+                <label for="loginUsername">Логин</label>
+                <input type="text" id="loginUsername" placeholder="Введите логин" autocomplete="off" autofocus>
+            </div>
+            
+            <div class="input-group">
+                <label for="loginPassword">Пароль</label>
+                <input type="password" id="loginPassword" placeholder="Введите пароль">
+            </div>
+            
+            <button class="btn btn-primary" onclick="handleLogin()">Войти</button>
+            
+            <div class="switch-form">
+                Нет аккаунта? <a href="javascript:void(0);" onclick="switchToRegister()">Зарегистрироваться</a>
+            </div>
+        </div>
+        
+        <!-- Форма регистрации -->
+        <div class="form-container hidden" id="registerForm">
+            <h2>Регистрация</h2>
+            
+            <div class="input-group">
+                <label for="registerUsername">Логин</label>
+                <input type="text" id="registerUsername" placeholder="Введите логин (мин. 3 символа)" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label for="registerPassword">Пароль</label>
+                <input type="password" id="registerPassword" placeholder="Введите пароль (мин. 6 символов)">
+            </div>
+            
+            <div class="input-group">
+                <label for="registerPasswordConfirm">Подтверждение пароля</label>
+                <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль">
+            </div>
+            
+            <button class="btn btn-primary" onclick="handleRegister()">Зарегистрироваться</button>
+            
+            <div class="switch-form">
+                Уже есть аккаунт? <a href="javascript:void(0);" onclick="switchToLogin()">Войти</a>
+            </div>
+        </div>
+        
+        <!-- Сообщения -->
+        <div class="message hidden" id="message"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор персонажа</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="selection-container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>Выбор персонажа</h1>
+            <p class="subtitle">Выберите персонажа для входа в игру</p>
+        </div>
+        
+        <!-- Список персонажей -->
+        <div class="characters-grid" id="charactersGrid">
+            <!-- Карточки персонажей будут добавлены через JS -->
+        </div>
+        
+        <!-- Кнопка создания нового персонажа -->
+        <div class="create-new-container" id="createNewContainer">
+            <button class="create-new-btn" id="createNewBtn">
+                <span class="plus-icon">+</span>
+                Создать нового персонажа
+            </button>
+        </div>
+        
+        <!-- Сообщения -->
+        <div class="message" id="message"></div>
+    </div>
+    
+    <!-- Модальное окно подтверждения удаления -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <h2>Подтверждение удаления</h2>
+            <p>Вы уверены, что хотите удалить персонажа <strong id="deleteCharacterName"></strong>?</p>
+            <p class="warning">Это действие необратимо!</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="cancelDeleteBtn">Отмена</button>
+                <button class="btn-confirm" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.selection-container {
+    width: 90%;
+    max-width: 1200px;
+    padding: 40px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Заголовок */
+.header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 1px;
+}
+
+/* Сетка персонажей */
+.characters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* Карточка персонажа */
+.character-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    animation: slideIn 0.5s ease;
+}
+
+.character-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.character-card.empty {
+    opacity: 0.6;
+    cursor: default;
+    border-style: dashed;
+}
+
+.character-card.empty:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Информация о персонаже */
+.character-info {
+    pointer-events: none;
+}
+
+.character-name {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.character-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.detail-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.character-stats {
+    display: flex;
+    gap: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.stat-value.money {
+    color: #FFD700;
+}
+
+/* Кнопка удаления */
+.delete-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(244, 67, 54, 0.8);
+    border: none;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    pointer-events: all;
+    z-index: 10;
+}
+
+.delete-btn:hover {
+    background: rgba(244, 67, 54, 1);
+    transform: scale(1.1);
+}
+
+/* Пустой слот */
+.empty-slot {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 18px;
+}
+
+.empty-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+
+/* Кнопка создания */
+.create-new-container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.create-new-btn {
+    background: rgba(76, 175, 80, 0.8);
+    border: 2px solid rgba(76, 175, 80, 1);
+    color: white;
+    padding: 20px 50px;
+    font-size: 20px;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.create-new-btn:hover {
+    background: rgba(76, 175, 80, 1);
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+}
+
+.create-new-btn:disabled {
+    background: rgba(100, 100, 100, 0.5);
+    border-color: rgba(100, 100, 100, 0.7);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.create-new-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.plus-icon {
+    font-size: 30px;
+    font-weight: 300;
+}
+
+/* Сообщения */
+.message {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+    min-width: 300px;
+    text-align: center;
+}
+
+.message.show {
+    opacity: 1;
+}
+
+.message.success {
+    background: rgba(76, 175, 80, 0.9);
+    border: 2px solid #4CAF50;
+}
+
+.message.error {
+    background: rgba(244, 67, 54, 0.9);
+    border: 2px solid #F44336;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    max-width: 500px;
+    text-align: center;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    font-size: 32px;
+}
+
+.modal-content p {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.warning {
+    color: #FFD700 !important;
+    font-weight: 700;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.modal-buttons button {
+    flex: 1;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: rgba(100, 100, 100, 0.8);
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: rgba(100, 100, 100, 1);
+    transform: scale(1.05);
+}
+
+.btn-confirm {
+    background: rgba(244, 67, 54, 0.8);
+    color: white;
+}
+
+.btn-confirm:hover {
+    background: rgba(244, 67, 54, 1);
+    transform: scale(1.05);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

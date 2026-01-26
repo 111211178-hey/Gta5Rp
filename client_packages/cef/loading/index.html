@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background">
+        <video autoplay muted loop id="bgVideo" style="display:none;">
+            <!-- Можно добавить фоновое видео -->
+        </video>
+    </div>
+    
+    <div class="loading-container">
+        <!-- Логотип сервера -->
+        <div class="logo">
+            <h1>GTA5 RAGE MP</h1>
+            <p>Role Play Server</p>
+        </div>
+        
+        <!-- Информация о персонаже -->
+        <div class="character-info">
+            <h2 id="characterName">Загрузка...</h2>
+            <div class="stats">
+                <div class="stat">
+                    <span class="label">Деньги:</span>
+                    <span class="value" id="money">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Банк:</span>
+                    <span class="value" id="bank">$0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Прогресс бар -->
+        <div class="loading-bar-container">
+            <div class="loading-bar">
+                <div class="loading-bar-fill" id="loadingBar"></div>
+            </div>
+            <div class="loading-text" id="loadingText">Загрузка мира...</div>
+        </div>
+        
+        <!-- Советы -->
+        <div class="tips">
+            <p id="tip">Добро пожаловать на сервер!</p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
