@@ -1391,15 +1391,19 @@ mp.events.add('cef:dropItem', (slot, quantity) => {
     mp.events.callRemote('inventory:dropItem', slot, quantity);
 });
 
+// Выброс экипировки
+mp.events.add('cef:dropEquipment', (slotType) => {
+    mp.events.callRemote('inventory:dropEquipment', slotType);
+});
+
 // ===== ПЕРЕМЕЩЕНИЕ ПРЕДМЕТА =====
 mp.events.add('cef:moveItem', (fromSlot, toSlot) => {
     console.log(`[Inventory] Перемещение: ${fromSlot} -> ${toSlot}`);
     mp.events.callRemote('inventory:moveItem', fromSlot, toSlot);
 });
 
-// ===== РАЗДЕЛЕНИЕ ПРЕДМЕТА =====
+// Разделение предмета
 mp.events.add('cef:splitItem', (slot, quantity) => {
-    console.log(`[Inventory] Разделение: слот ${slot}, количество ${quantity}`);
     mp.events.callRemote('inventory:splitItem', slot, quantity);
 });
 
