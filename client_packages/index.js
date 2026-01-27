@@ -9,6 +9,11 @@ let isCharacterSelectionShown = false;
 let isSpawned = false;
 let transitionBrowser = null;
 
+// Глобальные переменные для чата, инвентаря и админки
+let isChatActive = false; // Отслеживаем состояние чата
+let isInventoryOpen = false;
+let isAdminPanelOpen = false;
+
 // Переменные для предпросмотра
 let previewCamera = null;
 let isPreviewMode = false;
@@ -44,6 +49,88 @@ function enableControls() {
     mp.game.controls.enableAllControlActions(1);
     mp.game.controls.enableAllControlActions(2);
 }
+
+// ===== ЦЕНТРАЛИЗОВАННАЯ ОБРАБОТКА КЛАВИШ =====
+
+// Перехватываем T (открытие чата)
+mp.keys.bind(0x54, true, () => { // T key
+    // Блокируем если инвентарь открыт
+    if (isInventoryOpen) {
+        console.log('[Chat] Инвентарь открыт - чат заблокирован');
+        mp.game.graphics.notify('~r~Закройте инвентарь!');
+        return;
+    }
+    
+    // Блокируем если админ панель открыта
+    if (isAdminPanelOpen) {
+        console.log('[Chat] Админ панель открыта - чат заблокирован');
+        mp.game.graphics.notify('~r~Закройте админ панель!');
+        return;
+    }
+    
+    // Разрешаем открытие чата
+    isChatActive = true;
+    console.log('[Chat] Чат открыт через T');
+});
+
+// Перехватываем Y (открытие чата с /)
+mp.keys.bind(0x59, true, () => { // Y key
+    // Блокируем если инвентарь открыт
+    if (isInventoryOpen) {
+        console.log('[Chat] Инвентарь открыт - чат заблокирован');
+        mp.game.graphics.notify('~r~Закройте инвентарь!');
+        return;
+    }
+    
+    // Блокируем если админ панель открыта
+    if (isAdminPanelOpen) {
+        console.log('[Chat] Админ панель открыта - чат заблокирован');
+        mp.game.graphics.notify('~r~Закройте админ панель!');
+        return;
+    }
+    
+    // Разрешаем открытие чата
+    isChatActive = true;
+    console.log('[Chat] Чат открыт через Y (/)');
+});
+
+// ESC закрывает чат, инвентарь или админку (по приоритету)
+mp.keys.bind(0x1B, true, () => { // ESC
+    // Закрываем чат если активен (наивысший приоритет)
+    if (isChatActive) {
+        isChatActive = false;
+        console.log('[Chat] Чат закрыт через ESC');
+        return; // Останавливаемся здесь
+    }
+    
+    // Закрываем инвентарь если открыт (средний приоритет)
+    if (isInventoryOpen) {
+        closeInventory();
+        return; // Останавливаемся здесь
+    }
+    
+    // Закрываем админ панель если открыта (низкий приоритет)
+    if (isAdminPanelOpen) {
+        closeAdminPanel();
+        return; // Останавливаемся здесь
+    }
+});
+
+// Enter закрывает чат
+mp.keys.bind(0x0D, true, () => { // Enter
+    if (isChatActive) {
+        setTimeout(() => {
+            isChatActive = false;
+            console.log('[Chat] Чат закрыт через Enter');
+        }, 100);
+    }
+});
+
+// Отслеживание состояния чата через событие
+mp.events.add('chatActive', (active) => {
+    isChatActive = active;
+    console.log('[Chat] Состояние чата:', active ? 'активен' : 'неактивен');
+});
 
 // === АВТОРИЗАЦИЯ (ГЛАВНОЕ МЕНЮ) ===
 
@@ -861,7 +948,6 @@ mp.events.add('playerCommand', (command) => {
 // ===== АДМИН СИСТЕМА =====
 
 let adminBrowser = null;
-let isAdminPanelOpen = false;
 let isAdminSystemActive = false;
 let adminLevel = 0;
 
@@ -932,6 +1018,14 @@ mp.events.add('client:openAdminPanel', (level) => {
             // Отключаем управление
             mp.game.ui.displayRadar(false);
             
+            // Блокируем управление персонажем
+            mp.players.local.freezePosition(true);
+
+            // Отключаем ввод управления
+            mp.game.controls.disableAllControlActions(0);
+            mp.game.controls.disableAllControlActions(1);
+            mp.game.controls.disableAllControlActions(2);
+            
             // Отправляем данные админа
             const adminData = {
                 name: mp.players.local.name || 'Admin',
@@ -979,6 +1073,14 @@ function closeAdminPanel() {
     // Включаем управление обратно
     mp.game.ui.displayRadar(true);
     
+    // Разблокируем управление персонажем
+    mp.players.local.freezePosition(false);
+
+    // Включаем управление обратно
+    mp.game.controls.enableAllControlActions(0);
+    mp.game.controls.enableAllControlActions(1);
+    mp.game.controls.enableAllControlActions(2);
+    
     isAdminPanelOpen = false;
     
     mp.gui.chat.push('!{#00ff00}[Админ] ✅ Панель закрыта!');
@@ -987,13 +1089,6 @@ function closeAdminPanel() {
 
 mp.events.add('cef:closeAdminPanel', () => {
     closeAdminPanel();
-});
-
-// Закрытие по ESC
-mp.keys.bind(0x1B, true, () => { // ESC
-    if (isAdminPanelOpen) {
-        closeAdminPanel();
-    }
 });
 
 // ===== ПОЛУЧЕНИЕ СПИСКА ИГРОКОВ =====
@@ -1116,49 +1211,8 @@ console.log('[Admin Client] Система администрирования з
 // ===== СИСТЕМА ИНВЕНТАРЯ =====
 
 let inventoryBrowser = null;
-let isInventoryOpen = false;
-let isChatActive = false; // Отслеживаем состояние чата вручную
 
 mp.gui.chat.push('!{#4caf50}[Inventory] Модуль загружен');
-
-// ===== ОТСЛЕЖИВАНИЕ СОСТОЯНИЯ ЧАТА =====
-mp.events.add('chatActive', (active) => {
-    isChatActive = active;
-    console.log('[Inventory] Чат:', active ? 'активен' : 'неактивен');
-});
-
-// Альтернативный способ - отслеживаем через нажатие T
-mp.keys.bind(0x54, true, () => { // T key
-    isChatActive = true;
-    console.log('[Inventory] Чат открыт через T');
-});
-
-mp.keys.bind(0x59, true, () => { // Y key (для команд)
-    isChatActive = true;
-    console.log('[Inventory] Чат открыт через Y (/)');
-});
-
-// Отслеживаем закрытие чата через ESC и Enter
-mp.keys.bind(0x0D, true, () => { // Enter
-    if (isChatActive) {
-        setTimeout(() => {
-            isChatActive = false;
-            console.log('[Inventory] Чат закрыт через Enter');
-        }, 100);
-    }
-});
-
-mp.keys.bind(0x1B, true, () => { // ESC
-    if (isChatActive) {
-        isChatActive = false;
-        console.log('[Inventory] Чат закрыт через ESC');
-    }
-    
-    // Закрываем инвентарь если открыт
-    if (isInventoryOpen) {
-        closeInventory();
-    }
-});
 
 // ===== ОТКРЫТИЕ/ЗАКРЫТИЕ ПО КНОПКЕ I =====
 mp.keys.bind(0x49, true, () => { // I key
@@ -1221,6 +1275,14 @@ mp.events.add('client:openInventory', (inventoryJson, charDataJson) => {
             // Блокируем управление
             mp.game.ui.displayHud(false);
             
+            // Блокируем управление персонажем
+            mp.players.local.freezePosition(true);
+
+            // Отключаем ввод управления
+            mp.game.controls.disableAllControlActions(0);
+            mp.game.controls.disableAllControlActions(1);
+            mp.game.controls.disableAllControlActions(2);
+            
             // Загружаем данные в CEF
             if (inventoryBrowser) {
                 inventoryBrowser.execute(`loadInventory(${inventoryJson}, ${charDataJson})`);
@@ -1261,6 +1323,14 @@ function closeInventory() {
     
     // Включаем HUD обратно
     mp.game.ui.displayHud(true);
+    
+    // Разблокируем управление персонажем
+    mp.players.local.freezePosition(false);
+
+    // Включаем управление обратно
+    mp.game.controls.enableAllControlActions(0);
+    mp.game.controls.enableAllControlActions(1);
+    mp.game.controls.enableAllControlActions(2);
     
     isInventoryOpen = false;
     
