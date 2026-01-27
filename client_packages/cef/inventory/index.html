@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="inventory-container" id="inventoryContainer">
+        <!-- ЛЕВАЯ ПАНЕЛЬ: ИНФОРМАЦИЯ -->
+        <div class="info-panel">
+            <div class="character-info">
+                <div class="character-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="character-details">
+                    <h2 id="characterName">John Doe</h2>
+                    <p id="characterLevel">Уровень 1</p>
+                </div>
+            </div>
+
+            <div class="weight-info">
+                <div class="weight-bar">
+                    <div class="weight-fill" id="weightFill"></div>
+                </div>
+                <div class="weight-text">
+                    <span id="currentWeight">0</span> / <span id="maxWeight">50</span> кг
+                </div>
+            </div>
+
+            <div class="selected-item-info" id="selectedItemInfo" style="display: none;">
+                <div class="item-preview">
+                    <i class="fas fa-box" id="previewIcon"></i>
+                </div>
+                <h3 id="itemName">Название предмета</h3>
+                <p class="item-type" id="itemType">Тип</p>
+                <p class="item-description" id="itemDescription">Описание предмета</p>
+                <div class="item-stats">
+                    <div class="stat-row">
+                        <span>Вес:</span>
+                        <span id="itemWeight">0 кг</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Количество:</span>
+                        <span id="itemQuantity">1</span>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="action-btn use-btn" id="useBtn">
+                        <i class="fas fa-hand-sparkles"></i> Использовать
+                    </button>
+                    <button class="action-btn drop-btn" id="dropBtn">
+                        <i class="fas fa-trash"></i> Выбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЦЕНТРАЛЬНАЯ ПАНЕЛЬ: ИНВЕНТАРЬ -->
+        <div class="inventory-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-backpack"></i> Инвентарь</h2>
+                <button class="close-btn" id="closeBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Быстрый доступ -->
+            <div class="hotbar">
+                <div class="hotbar-title">Быстрый доступ</div>
+                <div class="hotbar-slots" id="hotbarSlots">
+                    <!-- Слоты 1-5 генерируются JS -->
+                </div>
+            </div>
+
+            <!-- Основной инвентарь -->
+            <div class="inventory-grid" id="inventoryGrid">
+                <!-- Слоты 6-35 генерируются JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

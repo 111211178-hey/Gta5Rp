@@ -879,8 +879,23 @@ mp.events.add('client:activateAdminSystem', (level) => {
 
 // ===== ОТКРЫТИЕ/ЗАКРЫТИЕ ПО F3 =====
 mp.keys.bind(0x72, true, () => { // F3
+    // Проверяем активен ли чат
+    if (isChatActive) {
+        console.log('[Admin] Чат активен, панель не открывается');
+        mp.game.graphics.notify('~r~Закройте чат перед открытием админ панели!');
+        return;
+    }
+    
+    // Проверяем открыт ли инвентарь
+    if (isInventoryOpen) {
+        console.log('[Admin] Инвентарь открыт, панель не открывается');
+        mp.game.graphics.notify('~r~Закройте инвентарь перед открытием админ панели!');
+        return;
+    }
+    
     if (!isAdminSystemActive) {
         mp.gui.chat.push('!{#ff9800}[Админ] Система не активирована! Используйте /admin');
+        mp.game.graphics.notify('~r~Используйте /admin для активации!');
         return;
     }
     
@@ -1097,3 +1112,191 @@ setInterval(() => {
 
 mp.gui.chat.push('!{#4caf50}[Admin] ✅ Система загружена');
 console.log('[Admin Client] Система администрирования загружена');
+
+// ===== СИСТЕМА ИНВЕНТАРЯ =====
+
+let inventoryBrowser = null;
+let isInventoryOpen = false;
+let isChatActive = false; // Отслеживаем состояние чата вручную
+
+mp.gui.chat.push('!{#4caf50}[Inventory] Модуль загружен');
+
+// ===== ОТСЛЕЖИВАНИЕ СОСТОЯНИЯ ЧАТА =====
+mp.events.add('chatActive', (active) => {
+    isChatActive = active;
+    console.log('[Inventory] Чат:', active ? 'активен' : 'неактивен');
+});
+
+// Альтернативный способ - отслеживаем через нажатие T
+mp.keys.bind(0x54, true, () => { // T key
+    isChatActive = true;
+    console.log('[Inventory] Чат открыт через T');
+});
+
+mp.keys.bind(0x59, true, () => { // Y key (для команд)
+    isChatActive = true;
+    console.log('[Inventory] Чат открыт через Y (/)');
+});
+
+// Отслеживаем закрытие чата через ESC и Enter
+mp.keys.bind(0x0D, true, () => { // Enter
+    if (isChatActive) {
+        setTimeout(() => {
+            isChatActive = false;
+            console.log('[Inventory] Чат закрыт через Enter');
+        }, 100);
+    }
+});
+
+mp.keys.bind(0x1B, true, () => { // ESC
+    if (isChatActive) {
+        isChatActive = false;
+        console.log('[Inventory] Чат закрыт через ESC');
+    }
+    
+    // Закрываем инвентарь если открыт
+    if (isInventoryOpen) {
+        closeInventory();
+    }
+});
+
+// ===== ОТКРЫТИЕ/ЗАКРЫТИЕ ПО КНОПКЕ I =====
+mp.keys.bind(0x49, true, () => { // I key
+    // Проверяем активен ли чат
+    if (isChatActive) {
+        console.log('[Inventory] Чат активен, инвентарь не открывается');
+        mp.game.graphics.notify('~r~Закройте чат перед открытием инвентаря!');
+        return;
+    }
+    
+    // Проверяем открыта ли админ панель
+    if (typeof isAdminPanelOpen !== 'undefined' && isAdminPanelOpen) {
+        console.log('[Inventory] Админ панель открыта, инвентарь не открывается');
+        mp.game.graphics.notify('~r~Закройте админ панель перед открытием инвентаря!');
+        return;
+    }
+    
+    if (isInventoryOpen) {
+        closeInventory();
+    } else {
+        openInventory();
+    }
+});
+
+// ===== ОТКРЫТИЕ ИНВЕНТАРЯ =====
+function openInventory() {
+    if (isInventoryOpen) return;
+    
+    // Дополнительная проверка чата
+    if (isChatActive) {
+        mp.gui.chat.push('!{#ff9800}[Inventory] Закройте чат перед открытием инвентаря!');
+        mp.game.graphics.notify('~r~Закройте чат!');
+        return;
+    }
+    
+    console.log('[Inventory] Открытие инвентаря...');
+    
+    // Запрашиваем инвентарь с сервера
+    mp.events.callRemote('inventory:open');
+}
+
+mp.events.add('client:openInventory', (inventoryJson, charDataJson) => {
+    try {
+        console.log('[Inventory] Данные получены, создаю браузер...');
+        
+        // Создаём браузер
+        inventoryBrowser = mp.browsers.new('package://cef/inventory/index.html');
+        
+        setTimeout(() => {
+            // Показываем курсор
+            mp.gui.cursor.visible = true;
+            
+            if (typeof mp.gui.cursor.show === 'function') {
+                mp.gui.cursor.show(true, true);
+            }
+            
+            // Отключаем радар
+            mp.game.ui.displayRadar(false);
+            
+            // Блокируем управление
+            mp.game.ui.displayHud(false);
+            
+            // Загружаем данные в CEF
+            if (inventoryBrowser) {
+                inventoryBrowser.execute(`loadInventory(${inventoryJson}, ${charDataJson})`);
+            }
+            
+            mp.gui.chat.push('!{#00ff00}[Inventory] ✅ Инвентарь открыт! (I или ESC для закрытия)');
+            mp.game.graphics.notify('~g~Инвентарь открыт!~n~~w~I или ESC для закрытия');
+            
+        }, 500);
+        
+        isInventoryOpen = true;
+        
+    } catch (err) {
+        mp.gui.chat.push(`!{#ff0000}[Inventory] ❌ ОШИБКА: ${err.message}`);
+        console.error('[Inventory] Ошибка:', err);
+    }
+});
+
+// ===== ЗАКРЫТИЕ ИНВЕНТАРЯ =====
+function closeInventory() {
+    if (!isInventoryOpen) return;
+    
+    console.log('[Inventory] Закрытие инвентаря...');
+    
+    if (inventoryBrowser) {
+        inventoryBrowser.destroy();
+        inventoryBrowser = null;
+    }
+    
+    mp.gui.cursor.visible = false;
+    
+    if (typeof mp.gui.cursor.show === 'function') {
+        mp.gui.cursor.show(false, false);
+    }
+    
+    // Включаем радар обратно
+    mp.game.ui.displayRadar(true);
+    
+    // Включаем HUD обратно
+    mp.game.ui.displayHud(true);
+    
+    isInventoryOpen = false;
+    
+    mp.gui.chat.push('!{#00ff00}[Inventory] ✅ Инвентарь закрыт!');
+}
+
+mp.events.add('cef:closeInventory', () => {
+    closeInventory();
+});
+
+// ===== ОБНОВЛЕНИЕ ИНВЕНТАРЯ =====
+mp.events.add('client:updateInventory', (inventoryJson) => {
+    if (!isInventoryOpen || !inventoryBrowser) return;
+    
+    console.log('[Inventory] Обновление инвентаря...');
+    
+    inventoryBrowser.execute(`inventory:update`, inventoryJson);
+});
+
+// ===== ИСПОЛЬЗОВАНИЕ ПРЕДМЕТА =====
+mp.events.add('cef:useItem', (slot) => {
+    console.log(`[Inventory] Использование предмета в слоте ${slot}`);
+    mp.events.callRemote('inventory:useItem', slot);
+});
+
+// ===== ВЫБРОС ПРЕДМЕТА =====
+mp.events.add('cef:dropItem', (slot, quantity) => {
+    console.log(`[Inventory] Выброс предмета: слот ${slot}, количество ${quantity}`);
+    mp.events.callRemote('inventory:dropItem', slot, quantity);
+});
+
+// ===== ПЕРЕМЕЩЕНИЕ ПРЕДМЕТА =====
+mp.events.add('cef:moveItem', (fromSlot, toSlot) => {
+    console.log(`[Inventory] Перемещение: ${fromSlot} -> ${toSlot}`);
+    mp.events.callRemote('inventory:moveItem', fromSlot, toSlot);
+});
+
+mp.gui.chat.push('!{#4caf50}[Inventory] ✅ Система инвентаря загружена');
+console.log('[Inventory Client] Система инвентаря загружена');

@@ -1,0 +1,354 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: transparent;
+    overflow: hidden;
+    color: white;
+}
+
+/* ===== КОНТЕЙНЕР ===== */
+.inventory-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ===== ЛЕВАЯ ПАНЕЛЬ: ИНФОРМАЦИЯ ===== */
+.info-panel {
+    width: 350px;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 15px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.character-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.character-avatar {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.character-details h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.character-details p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.weight-info {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.weight-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.weight-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    transition: width 0.3s ease;
+}
+
+.weight-fill.warning {
+    background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+}
+
+.weight-fill.danger {
+    background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+}
+
+.weight-text {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ===== ИНФОРМАЦИЯ О ВЫБРАННОМ ПРЕДМЕТЕ ===== */
+.selected-item-info {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+.item-preview {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+}
+
+.selected-item-info h3 {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.item-type {
+    text-align: center;
+    font-size: 12px;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.item-description {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.item-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.stat-row span:first-child {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.use-btn {
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    color: white;
+}
+
+.use-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.drop-btn {
+    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    color: white;
+}
+
+.drop-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+}
+
+/* ===== ЦЕНТРАЛЬНАЯ ПАНЕЛЬ: ИНВЕНТАРЬ ===== */
+.inventory-panel {
+    width: 700px;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 15px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.panel-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.close-btn {
+    width: 35px;
+    height: 35px;
+    background: rgba(244, 67, 54, 0.2);
+    border: 2px solid rgba(244, 67, 54, 0.3);
+    border-radius: 8px;
+    color: #f44336;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(244, 67, 54, 0.4);
+    transform: scale(1.1);
+}
+
+/* ===== ХОТБАР ===== */
+.hotbar {
+    margin-bottom: 20px;
+}
+
+.hotbar-title {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+}
+
+.hotbar-slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+/* ===== СЕТКА ИНВЕНТАРЯ ===== */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ===== СЛОТ ===== */
+.inventory-slot {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-slot:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.inventory-slot.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+}
+
+.inventory-slot.dragging {
+    opacity: 0.5;
+}
+
+.slot-number {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+}
+
+.item-icon {
+    font-size: 32px;
+    color: white;
+}
+
+.item-quantity {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* ===== ТИПЫ ПРЕДМЕТОВ (ЦВЕТА) ===== */
+.inventory-slot[data-type="weapon"] .item-icon { color: #f44336; }
+.inventory-slot[data-type="food"] .item-icon { color: #ff9800; }
+.inventory-slot[data-type="drink"] .item-icon { color: #2196f3; }
+.inventory-slot[data-type="medical"] .item-icon { color: #4caf50; }
+.inventory-slot[data-type="tool"] .item-icon { color: #9c27b0; }
+.inventory-slot[data-type="material"] .item-icon { color: #795548; }
+.inventory-slot[data-type="misc"] .item-icon { color: #9e9e9e; }
+
+/* ===== СКРОЛЛБАР ===== */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

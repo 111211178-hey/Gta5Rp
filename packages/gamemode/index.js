@@ -326,6 +326,17 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         console.log('='.repeat(60));
         player.call('client:characterCreationResponse', ['error', 'Ошибка при создании персонажа!']);
     }
+	
+	console.log(`[Server] ✅ INSERT успешен! ID нового персонажа: ${result.insertId}`);
+
+// ДОБАВИТЬ ЭТО:
+// Выдаём стартовый набор
+if (typeof global.addItem === 'function') {
+    await global.addItem(result.insertId, 'water', 2);
+    await global.addItem(result.insertId, 'bread', 3);
+    await global.addItem(result.insertId, 'phone', 1);
+    console.log('[Server] Стартовый набор выдан новому персонажу');
+}
 });
 
 mp.events.add('server:selectCharacter', async (player, characterId) => {
