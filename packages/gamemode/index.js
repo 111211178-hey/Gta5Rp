@@ -7,7 +7,6 @@ let nextCreationDimension = config.DIMENSION.CREATION_START;
 
 // При подключении игрока
 mp.events.add('playerJoin', async (player) => {
-    console.log(`[Server] Игрок ${player.socialClub} подключился к серверу`);
     
     player.dimension = 0;
     player.accountId = null;
@@ -28,7 +27,6 @@ mp.events.add('playerJoin', async (player) => {
                 player.outputChatBox(`!{#4caf50}[Система] Вы авторизованы как администратор уровня ${player.adminLevel}`);
                 player.outputChatBox(`!{#2196f3}[Подсказка] Используйте /admin для открытия админ панели`);
                 
-                console.log(`[Server] ${player.socialClub} вошел с админ уровнем ${player.adminLevel}`);
             }
         }
     } catch (err) {
@@ -40,21 +38,17 @@ mp.events.add('playerJoin', async (player) => {
 
 mp.events.add('server:login', async (player, login, password) => {
     try {
-        console.log('='.repeat(60));
-        console.log(`[Server] 🔍 Попытка входа: "${login}"`);
         
         // Validate inputs
         const loginValidation = security.validateLogin(login);
         if (!loginValidation.valid) {
             player.call('client:authResponse', ['error', loginValidation.error]);
-            console.log('='.repeat(60));
             return;
         }
         
         const passwordValidation = security.validatePassword(password);
         if (!passwordValidation.valid) {
             player.call('client:authResponse', ['error', passwordValidation.error]);
-            console.log('='.repeat(60));
             return;
         }
         
@@ -79,7 +73,6 @@ mp.events.add('server:login', async (player, login, password) => {
                 ? `Вы забанены до ${new Date(ban.expires_at).toLocaleString('ru-RU')}. Причина: ${ban.reason}`
                 : `Вы забанены навсегда. Причина: ${ban.reason}`;
             
-            console.log(`[Server] ❌ Попытка входа забаненного пользователя: ${login}`);
             player.call('client:authResponse', ['error', banMsg]);
             console.log('='.repeat(60));
             return;
@@ -92,7 +85,6 @@ mp.events.add('server:login', async (player, login, password) => {
         );
         
         if (rows.length === 0) {
-            console.log(`[Server] ❌ Логин не найден`);
             player.call('client:authResponse', ['error', 'Неверный логин или пароль']);
             console.log('='.repeat(60));
             return;
@@ -481,6 +473,22 @@ mp.events.add('server:selectCharacter', async (player, characterId) => {
         player.call('client:spawnCharacter', [JSON.stringify(characterData)]);
         
         console.log(`[Server] ✅ Персонаж ${character.name} ${character.surname} загружен`);
+        
+        // Загружаем одежду и оружие с небольшой задержкой (после спавна)
+        setTimeout(() => {
+            // Загружаем одежду
+            if (typeof global.loadCharacterClothes === 'function') {
+                global.loadCharacterClothes(player, character.id);
+                console.log(`[Server] 👕 Одежда загружена для персонажа ${character.id}`);
+            }
+            
+            // Загружаем экипированное оружие
+            if (typeof global.loadCharacterWeapons === 'function') {
+                global.loadCharacterWeapons(player, character.id);
+                console.log(`[Server] 🔫 Оружие загружено для персонажа ${character.id}`);
+            }
+        }, 2000); // 2 секунды задержки
+        
         console.log('='.repeat(60));
         
     } catch (err) {

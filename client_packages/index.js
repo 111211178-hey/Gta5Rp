@@ -1252,6 +1252,7 @@ function openInventory() {
     
     // Запрашиваем инвентарь с сервера
     mp.events.callRemote('inventory:open');
+	mp.events.callRemote('inventory:requestGroundItems');
 }
 
 mp.events.add('client:openInventory', (inventoryJson, charDataJson) => {
@@ -1345,9 +1346,37 @@ mp.events.add('cef:closeInventory', () => {
 mp.events.add('client:updateInventory', (inventoryJson) => {
     if (!isInventoryOpen || !inventoryBrowser) return;
     
-    console.log('[Inventory] Обновление инвентаря...');
+    try {
+        // Экранируем одинарные кавычки для передачи в CEF
+        const safeJson = inventoryJson.replace(/'/g, "\\'");
+        inventoryBrowser.execute(`loadInventory('${safeJson}', null)`);
+    } catch (err) {
+        console.error('[Inventory] Ошибка обновления:', err);
+    }
+});
+
+// ===== ОБНОВЛЕНИЕ СТАТОВ =====
+mp.events.add('client:updateStats', (statsJson) => {
+    if (!isInventoryOpen || !inventoryBrowser) return;
     
-    inventoryBrowser.execute(`inventory:update`, inventoryJson);
+    try {
+        inventoryBrowser.execute(`updatePlayerInfo(${statsJson})`);
+    } catch (err) {
+        console.error('[Inventory] Ошибка обновления статов:', err);
+    }
+});
+
+// ===== СНЯТИЕ ЭКИПИРОВКИ =====
+mp.events.add('cef:unequipItem', (slotType) => {
+    mp.events.callRemote('inventory:unequipItem', slotType);
+});
+
+// ===== ПЕРЕМЕЩЕНИЕ В СЛОТ ЭКИПИРОВКИ =====
+mp.events.add('cef:equipToSlot', (fromSlot, slotType) => {
+    mp.events.callRemote('inventory:moveItem',
+        JSON.stringify({ type: 'main', index: parseInt(fromSlot) }),
+        JSON.stringify({ type: 'equipment', index: slotType })
+    );
 });
 
 // ===== ИСПОЛЬЗОВАНИЕ ПРЕДМЕТА =====
@@ -1366,6 +1395,12 @@ mp.events.add('cef:dropItem', (slot, quantity) => {
 mp.events.add('cef:moveItem', (fromSlot, toSlot) => {
     console.log(`[Inventory] Перемещение: ${fromSlot} -> ${toSlot}`);
     mp.events.callRemote('inventory:moveItem', fromSlot, toSlot);
+});
+
+// ===== РАЗДЕЛЕНИЕ ПРЕДМЕТА =====
+mp.events.add('cef:splitItem', (slot, quantity) => {
+    console.log(`[Inventory] Разделение: слот ${slot}, количество ${quantity}`);
+    mp.events.callRemote('inventory:splitItem', slot, quantity);
 });
 
 mp.gui.chat.push('!{#4caf50}[Inventory] ✅ Система инвентаря загружена');
@@ -1713,6 +1748,82 @@ mp.events.add('client:receiveAdminReports', (reportsJson) => {
     }
 });
 
+// ===== СОХРАНЕНИЕ ОДЕЖДЫ (КЛИЕНТ) =====
+mp.events.add('client:requestClothesData', () => {
+    try {
+        const player = mp.players.local;
+        const clothes = {};
+        
+        // Собираем компоненты одежды
+        for (let i = 0; i < 12; i++) {
+            clothes[`comp_${i}_drawable`] = player.getDrawableVariation(i);
+            clothes[`comp_${i}_texture`] = player.getTextureVariation(i);
+        }
+        
+        // Props (очки, часы и т.д.)
+        for (let i = 0; i < 3; i++) {
+            clothes[`prop_${i}_drawable`] = player.getPropIndex(i);
+            clothes[`prop_${i}_texture`] = player.getPropTextureIndex(i);
+        }
+        
+        // Отправляем на сервер
+        mp.events.callRemote('inventory:saveClothesData', JSON.stringify(clothes));
+        
+        console.log('[Inventory] Данные одежды отправлены на сервер');
+        
+    } catch (err) {
+        console.error('[Inventory] Ошибка сохранения одежды:', err);
+    }
+});
+
+// ===== СИСТЕМА ПРЕДМЕТОВ НА ЗЕМЛЕ (КЛИЕНТ) =====
+
+let nearbyGroundItems = [];
+
+// Получаем обновление предметов на земле
+mp.events.add('client:updateGroundItems', (itemsJson) => {
+    try {
+        nearbyGroundItems = JSON.parse(itemsJson);
+        
+        // Обновляем UI если инвентарь открыт
+        if (isInventoryOpen && inventoryBrowser) {
+            inventoryBrowser.execute(`updateGroundItems('${itemsJson.replace(/'/g, "\\'")}')`);
+        }
+        
+    } catch (err) {
+        console.error('[Inventory] Ошибка обновления предметов на земле:', err);
+    }
+});
+
+// Запрос предметов на земле при открытии инвентаря
+mp.events.add('client:inventoryOpened', () => {
+    mp.events.callRemote('inventory:requestGroundItems');
+});
+
+// Подбор предмета с земли
+mp.events.add('cef:pickupItem', (groundItemId) => {
+    mp.events.callRemote('inventory:pickupItem', groundItemId);
+});
+
+// Клавиша E для быстрого подбора
+mp.keys.bind(0x45, false, () => { // E key
+    if (nearbyGroundItems.length > 0 && !isInventoryOpen) {
+        const nearest = nearbyGroundItems[0];
+        if (nearest.distance <= 3) {
+            mp.events.callRemote('inventory:pickupItem', nearest.id);
+        }
+    }
+});
+
+// Периодический запрос предметов на земле
+setInterval(() => {
+    if (mp.players.local.dimension !== undefined) {
+        mp.events.callRemote('inventory:requestGroundItems');
+    }
+}, 5000);
+
+console.log('[Inventory Client] ✅ Система предметов на земле загружена');
+console.log('[Inventory Client] ✅ Система сохранения одежды загружена');
 console.log('[Admin Extended Client] ✅ Все расширенные события зарегистрированы');
 console.log('[Admin Extended Client] 📋 Список событий:');
 console.log('  ✓ cef:startSpectate → admin:startSpectate');

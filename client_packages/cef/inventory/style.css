@@ -649,3 +649,304 @@ body {
         transform: scale(1);
     }
 }
+
+/* Зона выброса */
+.environment-panel {
+    transition: all 0.3s ease;
+    border: 2px dashed transparent;
+}
+
+.environment-panel.drop-hover {
+    border-color: #f44336 !important;
+    background: rgba(244, 67, 54, 0.2) !important;
+    box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
+}
+
+.drop-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    min-height: 100px;
+}
+
+.drop-hint .drop-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+.environment-panel.drop-hover .drop-hint {
+    color: #f44336;
+}
+
+.environment-panel.drop-hover .drop-icon {
+    opacity: 1;
+    animation: bounce 0.5s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Предметы на земле */
+.ground-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 10px;
+}
+
+.ground-item {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ground-item:hover {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.ground-item .item-icon {
+    font-size: 24px;
+}
+
+/* Предметы на земле */
+.ground-item-slot {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    margin: 3px;
+}
+
+.ground-item-slot:hover {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.3);
+    transform: scale(1.05);
+}
+
+.ground-item-slot .item-icon {
+    font-size: 24px;
+}
+
+.ground-item-slot .item-quantity {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.ground-item-slot .item-distance {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.no-items-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    padding: 20px;
+}
+
+/* Анимация подбора */
+.ground-item-slot.picking-up {
+    animation: pickupPulse 0.3s ease;
+}
+
+@keyframes pickupPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); opacity: 0.5; }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+/* ===== СЕТКА ИНВЕНТАРЯ ===== */
+#inventoryGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    grid-template-rows: repeat(8, 50px);
+    gap: 2px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    position: relative;
+}
+
+.inventory-cell {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.inventory-cell:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.inventory-cell.occupied {
+    pointer-events: none;
+    background: transparent;
+    border: none;
+}
+
+.inventory-cell.drag-over {
+    background: rgba(76, 175, 80, 0.3) !important;
+    border-color: #4caf50 !important;
+}
+
+.inventory-cell.drag-invalid {
+    background: rgba(244, 67, 54, 0.3) !important;
+    border-color: #f44336 !important;
+}
+
+/* ===== ПРЕДМЕТЫ ===== */
+.inventory-item {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(60, 60, 60, 0.9), rgba(40, 40, 40, 0.9));
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: grab;
+    transition: all 0.15s ease;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.inventory-item:hover {
+    border-color: #4caf50;
+    transform: scale(1.02);
+    z-index: 20;
+}
+
+.inventory-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    z-index: 100;
+}
+
+/* Размеры */
+.inventory-item.size-1x1 { width: 50px; height: 50px; }
+.inventory-item.size-2x1 { width: 102px; height: 50px; }
+.inventory-item.size-1x2 { width: 50px; height: 102px; }
+.inventory-item.size-2x2 { width: 102px; height: 102px; }
+.inventory-item.size-3x1 { width: 154px; height: 50px; }
+.inventory-item.size-3x2 { width: 154px; height: 102px; }
+.inventory-item.size-4x1 { width: 206px; height: 50px; }
+.inventory-item.size-4x2 { width: 206px; height: 102px; }
+
+/* Типы предметов */
+.inventory-item.type-weapon {
+    border-color: #f44336;
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.2), rgba(40, 40, 40, 0.9));
+}
+
+.inventory-item.type-clothing {
+    border-color: #2196f3;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(40, 40, 40, 0.9));
+}
+
+.inventory-item.type-consumable {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(40, 40, 40, 0.9));
+}
+
+.inventory-item.type-medical {
+    border-color: #e91e63;
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.2), rgba(40, 40, 40, 0.9));
+}
+
+.inventory-item.type-tool {
+    border-color: #ff9800;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(40, 40, 40, 0.9));
+}
+
+/* Иконки */
+.item-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 70%;
+}
+
+.item-image {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.item-emoji-icon {
+    font-size: 24px;
+}
+
+.inventory-item.size-2x1 .item-emoji-icon,
+.inventory-item.size-2x2 .item-emoji-icon { font-size: 32px; }
+
+.inventory-item.size-3x1 .item-emoji-icon,
+.inventory-item.size-3x2 .item-emoji-icon { font-size: 40px; }
+
+.inventory-item.size-4x1 .item-emoji-icon,
+.inventory-item.size-4x2 .item-emoji-icon { font-size: 48px; }
+
+/* Информация */
+.item-info {
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+}
+
+.item-quantity {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.item-weight-badge {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #aaa;
+    font-size: 9px;
+}

@@ -10,13 +10,14 @@ const db = mysql.createPool({
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
     queueLimit: 0
 });
+
 db.getConnection()
     .then(connection => {
-        console.log('[Database] ✅ База данных gtas_rp подключена успешно!');
+        console.log('[Database] ✅ Подключено');
         connection.release();
     })
     .catch(err => {
-        console.error('[Database] ❌ Ошибка подключения к базе данных:', err.message);
+        console.error('[Database] ❌ Ошибка подключения:', err.message);
     });
 
 module.exports = { db };

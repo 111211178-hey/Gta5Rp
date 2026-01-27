@@ -8,7 +8,7 @@ const ADMIN_PERMISSIONS = {
     2: ['kick', 'mute', 'freeze', 'heal', 'tp', 'spawn_vehicle', 'ban_temp', 'weather', 'time'],
     3: ['kick', 'mute', 'freeze', 'heal', 'tp', 'spawn_vehicle', 'ban_temp', 'weather', 'time', 'give_money', 'announcement'],
     4: ['kick', 'mute', 'freeze', 'heal', 'tp', 'spawn_vehicle', 'ban_temp', 'ban_perm', 'weather', 'time', 'give_money', 'announcement', 'manage_admins'],
-    5: ['*'] // Полный доступ
+    5: ['*']
 };
 
 // ===== ПРОВЕРКА ПРАВ =====
@@ -32,7 +32,6 @@ async function logAdminAction(adminId, actionType, targetPlayer, details) {
             'INSERT INTO admin_logs (admin_id, action_type, target_player, details) VALUES (?, ?, ?, ?)',
             [adminId, actionType, targetPlayer, details]
         );
-        
     } catch (err) {
         console.error('[Admin Log] Ошибка логирования:', err);
     }
@@ -41,13 +40,11 @@ async function logAdminAction(adminId, actionType, targetPlayer, details) {
 // ===== АКТИВАЦИЯ АДМИН СИСТЕМЫ =====
 mp.events.addCommand('admin', async (player) => {
     try {
-        
         if (!player.accountId) {
             player.outputChatBox('!{#f44336}Вы не авторизованы!');
             return;
         }
         
-        // Проверяем админ права
         const [result] = await db.query(
             'SELECT admin_level FROM users WHERE id = ?',
             [player.accountId]
@@ -59,16 +56,15 @@ mp.events.addCommand('admin', async (player) => {
         }
         
         player.adminLevel = result[0].admin_level;
-        player.adminEnabled = true; // Флаг активации
-                
+        player.adminEnabled = true;
+        
         player.outputChatBox(`!{#4caf50}[Админ] Система активирована! Уровень: ${player.adminLevel}`);
         player.outputChatBox(`!{#2196f3}[Админ] Нажмите F3 для открытия панели`);
         
-        // Отправляем активацию на клиент
         player.call('client:activateAdminSystem', [player.adminLevel]);
         
     } catch (err) {
-        console.error('[Admin System] ❌ Ошибка активации:', err);
+        console.error('[Admin System] Ошибка активации:', err);
         player.outputChatBox('!{#f44336}Ошибка активации админ системы!');
     }
 });
@@ -79,7 +75,7 @@ mp.events.add('admin:requestOpenPanel', (player) => {
         player.outputChatBox('!{#f44336}Админ система не активирована! Используйте /admin');
         return;
     }
-        
+    
     player.call('client:openAdminPanel', [player.adminLevel]);
 });
 
@@ -118,7 +114,7 @@ mp.events.add('admin:playerAction', async (player, action, targetId) => {
         player.call('client:adminNotify', ['error', 'Игрок не найден!']);
         return;
     }
-        
+    
     switch (action) {
         case 'teleportTo':
             if (!hasPermission(player, 'tp')) {
@@ -168,7 +164,7 @@ mp.events.add('admin:playerAction', async (player, action, targetId) => {
             target.health = 100;
             target.armour = 100;
             player.call('client:adminNotify', ['success', `${target.name} вылечен`]);
-            target.call('client:adminNotify', ['success', `Вы были вылечены администраторо��`]);
+            target.call('client:adminNotify', ['success', `Вы были вылечены администратором`]);
             
             await logAdminAction(player.accountId, 'HEAL', target.socialClub, `Player healed`);
             break;
@@ -193,7 +189,6 @@ mp.events.add('admin:playerAction', async (player, action, targetId) => {
                 return;
             }
             
-            // Открываем диалог бана
             player.call('client:openBanDialog', [targetId, target.name]);
             break;
     }
@@ -226,7 +221,7 @@ mp.events.add('admin:banPlayer', async (player, targetId, reason, duration) => {
         player.call('client:adminNotify', ['success', `${target.name} забанен`]);
         
         target.kick(`Banned: ${reason}`);
-                
+        
     } catch (err) {
         console.error('[Admin System] Ошибка бана:', err);
         player.call('client:adminNotify', ['error', 'Ошибка при бане игрока!']);
@@ -244,7 +239,7 @@ mp.events.add('admin:spawnVehicle', (player, model) => {
         const pos = player.position;
         const heading = player.heading;
         
-        const vehicle = mp.vehicles.new(mp.joaat(model), new mp.Vector3(pos.x + 3, pos.y, pos.z), {
+        mp.vehicles.new(mp.joaat(model), new mp.Vector3(pos.x + 3, pos.y, pos.z), {
             heading: heading,
             numberPlate: 'ADMIN',
             color: [[255, 255, 255], [255, 255, 255]],
@@ -254,7 +249,7 @@ mp.events.add('admin:spawnVehicle', (player, model) => {
         player.call('client:adminNotify', ['success', `Транспорт ${model} заспавнен`]);
         
         logAdminAction(player.accountId, 'SPAWN_VEHICLE', '', `Model: ${model}`);
-                
+        
     } catch (err) {
         console.error('[Admin System] Ошибка спавна транспорта:', err);
         player.call('client:adminNotify', ['error', 'Ошибка спавна транспорта!']);
@@ -272,7 +267,6 @@ mp.events.add('admin:teleport', (player, x, y, z) => {
     player.call('client:adminNotify', ['success', 'Телепортация выполнена!']);
     
     logAdminAction(player.accountId, 'TELEPORT', '', `X: ${x}, Y: ${y}, Z: ${z}`);
-    
 });
 
 // ===== ПОГОДА =====
@@ -287,7 +281,6 @@ mp.events.add('admin:setWeather', (player, weather) => {
     mp.players.broadcast(`!{#4caf50}[Сервер] Администратор изменил погоду на ${weather}`);
     
     logAdminAction(player.accountId, 'SET_WEATHER', '', `Weather: ${weather}`);
-    
 });
 
 // ===== ВРЕМЯ =====
@@ -302,7 +295,6 @@ mp.events.add('admin:setTime', (player, hour, minute) => {
     mp.players.broadcast(`!{#4caf50}[Сервер] Администратор изменил время на ${hour}:${minute.toString().padStart(2, '0')}`);
     
     logAdminAction(player.accountId, 'SET_TIME', '', `Time: ${hour}:${minute}`);
-    
 });
 
 // ===== ДЕНЬГИ =====
@@ -319,14 +311,11 @@ mp.events.add('admin:giveMoney', async (player, targetId, amount, type) => {
         return;
     }
     
-    // Validate type to prevent SQL injection
     if (type !== 'cash' && type !== 'bank') {
-        console.error('[Admin System] Invalid money type:', type);
-        player.call('client:adminNotify', ['error', 'Неверный тип валюты!']);
+        player.call('client:adminNotify', ['error', 'Невер��ый тип валюты!']);
         return;
     }
     
-    // Validate amount
     const numAmount = parseInt(amount);
     if (isNaN(numAmount) || numAmount < 0) {
         player.call('client:adminNotify', ['error', 'Неверная сумма!']);
@@ -336,7 +325,6 @@ mp.events.add('admin:giveMoney', async (player, targetId, amount, type) => {
     try {
         const field = type === 'cash' ? 'money' : 'bank';
         
-        // Use parameterized query properly
         if (field === 'money') {
             await db.query(
                 'UPDATE characters SET money = money + ? WHERE id = ?',
@@ -359,7 +347,7 @@ mp.events.add('admin:giveMoney', async (player, targetId, amount, type) => {
         target.call('client:adminNotify', ['success', `Вам выдано $${numAmount.toLocaleString()}`]);
         
         await logAdminAction(player.accountId, 'GIVE_MONEY', target.socialClub, `Amount: $${numAmount}, Type: ${type}`);
-                
+        
     } catch (err) {
         console.error('[Admin System] Ошибка выдачи денег:', err);
         player.call('client:adminNotify', ['error', 'Ошибка выдачи денег!']);
@@ -379,14 +367,11 @@ mp.events.add('admin:takeMoney', async (player, targetId, amount, type) => {
         return;
     }
     
-    // Validate type to prevent SQL injection
     if (type !== 'cash' && type !== 'bank') {
-        console.error('[Admin System] Invalid money type:', type);
         player.call('client:adminNotify', ['error', 'Неверный тип валюты!']);
         return;
     }
     
-    // Validate amount
     const numAmount = parseInt(amount);
     if (isNaN(numAmount) || numAmount < 0) {
         player.call('client:adminNotify', ['error', 'Неверная сумма!']);
@@ -396,7 +381,6 @@ mp.events.add('admin:takeMoney', async (player, targetId, amount, type) => {
     try {
         const field = type === 'cash' ? 'money' : 'bank';
         
-        // Use parameterized query properly
         if (field === 'money') {
             await db.query(
                 'UPDATE characters SET money = GREATEST(0, money - ?) WHERE id = ?',
@@ -420,7 +404,6 @@ mp.events.add('admin:takeMoney', async (player, targetId, amount, type) => {
         
         await logAdminAction(player.accountId, 'TAKE_MONEY', target.socialClub, `Amount: $${numAmount}, Type: ${type}`);
         
-        
     } catch (err) {
         console.error('[Admin System] Ошибка снятия денег:', err);
         player.call('client:adminNotify', ['error', 'Ошибка снятия денег!']);
@@ -437,7 +420,6 @@ mp.events.add('admin:sendAnnouncement', (player, text) => {
     mp.players.broadcast(`!{#ff9800}[ОБЪЯВЛЕНИЕ] ${text}`);
     
     logAdminAction(player.accountId, 'ANNOUNCEMENT', '', `Text: ${text}`);
-    
 });
 
 // ===== СТАТИСТИКА ЭКОНОМИКИ =====
@@ -481,7 +463,6 @@ mp.events.add('admin:getLogs', async (player) => {
         
         player.call('client:receiveLogs', [JSON.stringify(formattedLogs)]);
         
-        
     } catch (err) {
         console.error('[Admin System] Ошибка получения логов:', err);
         player.call('client:adminNotify', ['error', 'Ошибка загрузки логов!']);
@@ -490,7 +471,6 @@ mp.events.add('admin:getLogs', async (player) => {
 
 // ===== НАЗНАЧЕНИЕ АДМИНА =====
 mp.events.addCommand('setadmin', async (player, fullText) => {
-    // Только владелец сервера или уровень 5
     if (!player.adminLevel || player.adminLevel < 5) {
         player.outputChatBox('!{#f44336}У вас нет прав для выполнения этой команды!');
         return;
@@ -530,7 +510,6 @@ mp.events.addCommand('setadmin', async (player, fullText) => {
         target.outputChatBox(`!{#4caf50}[Система] Вам установлен админ уровень: ${level}`);
         
         await logAdminAction(player.accountId, 'SET_ADMIN', target.socialClub, `Level: ${level}`);
-        
         
     } catch (err) {
         console.error('[Admin System] Ошибка назначения админа:', err);
@@ -572,17 +551,14 @@ mp.events.addCommand('removeadmin', async (player, fullText) => {
         
         await logAdminAction(player.accountId, 'REMOVE_ADMIN', target.socialClub, 'Admin removed');
         
-        
     } catch (err) {
         console.error('[Admin System] Ошибка снятия админа:', err);
         player.outputChatBox('!{#f44336}Ошибка при снятии администратора!');
     }
 });
 
-
 // ===== РАСШИРЕННЫЕ ФУНКЦИИ АДМИНКИ =====
 
-// Глобальное хранилище состояний админов
 global.adminStates = new Map();
 
 // ===== СЛЕЖКА ЗА ИГРОКОМ =====
@@ -595,7 +571,6 @@ mp.events.add('admin:startSpectate', async (admin, targetId) => {
             return;
         }
         
-        // Сохраняем позицию админа
         const adminState = {
             position: admin.position,
             heading: admin.heading,
@@ -606,14 +581,11 @@ mp.events.add('admin:startSpectate', async (admin, targetId) => {
         
         global.adminStates.set(admin.id, adminState);
         
-        // Обновляем БД
         await db.query('UPDATE users SET is_spectating = ? WHERE id = ?', [targetId, admin.accountId]);
         
-        // Делаем админа невидимым
         admin.alpha = 0;
         admin.dimension = target.dimension;
         
-        // Отправляем клиенту
         admin.call('client:startSpectate', [targetId, target.position.x, target.position.y, target.position.z]);
         
         logAdminAction(admin.accountId, 'spectate', `Начал слежку за ${target.socialClub}`);
@@ -633,7 +605,6 @@ mp.events.add('admin:stopSpectate', async (admin) => {
             return;
         }
         
-        // Возвращаем админа
         admin.position = adminState.position;
         admin.heading = adminState.heading;
         admin.dimension = adminState.dimension;
@@ -645,7 +616,6 @@ mp.events.add('admin:stopSpectate', async (admin) => {
         
         admin.call('client:stopSpectate');
         admin.call('client:adminNotify', ['success', 'Слежка остановлена']);
-        
         
     } catch (err) {
         console.error('[Admin] Ошибка остановки spectate:', err);
@@ -728,7 +698,6 @@ mp.events.add('admin:getTeleportHistory', async (admin) => {
 // ===== СПИСОК ЗАБАНЕННЫХ =====
 mp.events.add('admin:getBannedList', async (admin) => {
     try {
-        
         const [bans] = await db.query(`
             SELECT 
                 b.id,
@@ -747,8 +716,6 @@ mp.events.add('admin:getBannedList', async (admin) => {
             LIMIT 50
         `);
         
-        
-        // Форматируем для CEF
         const formattedBans = bans.map(ban => {
             return {
                 id: ban.id,
@@ -766,7 +733,6 @@ mp.events.add('admin:getBannedList', async (admin) => {
         
     } catch (err) {
         console.error('[Admin] Ошибка получения списка банов:', err);
-        console.error('[Admin] SQL Error:', err.sqlMessage || err.message);
         admin.call('client:receiveBannedList', [JSON.stringify([])]);
         admin.call('client:adminNotify', ['error', 'Ошибка загрузки списка банов']);
     }
@@ -775,7 +741,6 @@ mp.events.add('admin:getBannedList', async (admin) => {
 // ===== РАЗБАН =====
 mp.events.add('admin:unbanPlayer', async (admin, banId, reason) => {
     try {
-        
         await db.query(`
             UPDATE bans 
             SET is_active = 0, 
@@ -789,8 +754,6 @@ mp.events.add('admin:unbanPlayer', async (admin, banId, reason) => {
         
         admin.call('client:adminNotify', ['success', 'Игрок разбанен']);
         
-        
-        // Обновляем список
         mp.events.call('admin:getBannedList', admin);
         
     } catch (err) {
@@ -799,26 +762,51 @@ mp.events.add('admin:unbanPlayer', async (admin, banId, reason) => {
     }
 });
 
-// ===== ВЫДАЧА ОРУЖИЯ =====
+// ===== ВЫДАЧА ОРУЖИЯ (ЧЕРЕЗ ИНВЕНТАРЬ) =====
 mp.events.add('admin:giveWeapon', async (admin, targetId, weaponHash, ammo) => {
     try {
         const target = mp.players.at(targetId);
         
-        if (!target) {
+        if (!target || !target.characterId) {
             admin.call('client:adminNotify', ['error', 'Игрок не найден']);
             return;
         }
         
-        target.giveWeapon(mp.joaat(weaponHash), parseInt(ammo));
+        // Преобразуем hash в название предмета
+        const weaponItems = {
+            'WEAPON_PISTOL': 'weapon_pistol',
+            'WEAPON_SMG': 'weapon_smg',
+            'WEAPON_CARBINERIFLE': 'weapon_rifle',
+            'WEAPON_PUMPSHOTGUN': 'weapon_shotgun',
+            'WEAPON_KNIFE': 'weapon_knife',
+            'WEAPON_MICROSMG': 'weapon_smg'
+        };
         
-        logAdminAction(admin.accountId, 'give_weapon', `Оружие: ${weaponHash}, Патроны: ${ammo}, Цель: ${target.socialClub}`);
+        const itemName = weaponItems[weaponHash.toUpperCase()];
         
-        admin.call('client:adminNotify', ['success', `Оружие выдано ${target.socialClub}`]);
-        target.call('client:adminNotify', ['info', 'Вам выдано оружие от администратора']);
+        if (itemName && typeof global.addItem === 'function') {
+            // Добавляем в инвентарь
+            const success = await global.addItem(target.characterId, itemName, 1);
+            
+            if (success) {
+                admin.call('client:adminNotify', ['success', `Оружие добавлено в инвентарь ${target.name}`]);
+                target.call('client:adminNotify', ['info', 'Вам выдано оружие (проверьте инвентарь)']);
+            } else {
+                // Если не удалось - выдаём напрямую
+                target.giveWeapon(mp.joaat(weaponHash), parseInt(ammo));
+                admin.call('client:adminNotify', ['warning', `Оружие выдано напрямую (инвентарь полон)`]);
+            }
+        } else {
+            // Старый способ - напрямую
+            target.giveWeapon(mp.joaat(weaponHash), parseInt(ammo));
+            admin.call('client:adminNotify', ['success', `Оружие выдано ${target.name}`]);
+        }
         
+        logAdminAction(admin.accountId, 'give_weapon', target.socialClub, `Weapon: ${weaponHash}`);
         
     } catch (err) {
         console.error('[Admin] Ошибка выдачи оружия:', err);
+        admin.call('client:adminNotify', ['error', 'Ошибка выдачи оружия']);
     }
 });
 
@@ -841,7 +829,6 @@ mp.events.add('admin:clearInventory', async (admin, targetId) => {
         admin.call('client:adminNotify', ['success', `Инвентарь очищен у ${target.socialClub}`]);
         target.call('client:adminNotify', ['warning', 'Ваш инвентарь очищен администратором']);
         
-        
     } catch (err) {
         console.error('[Admin] Ошибка очистки инвентаря:', err);
     }
@@ -861,9 +848,8 @@ mp.events.add('admin:deleteAllVehicles', async (admin) => {
         
         admin.call('client:adminNotify', ['success', `Удалено машин: ${count}`]);
         
-        
     } catch (err) {
-        console.error('[Admin] Ошибка удаления машин:', err);
+        console.error('[Admin] Ошибка уда��ения машин:', err);
     }
 });
 
@@ -888,7 +874,6 @@ mp.events.add('admin:repairVehicle', (admin, targetId) => {
         
         admin.call('client:adminNotify', ['success', `Машина отремонтирована для ${target.socialClub}`]);
         target.call('client:adminNotify', ['success', 'Ваша машина отремонтирована']);
-        
         
     } catch (err) {
         console.error('[Admin] Ошибка ремонта:', err);
@@ -919,7 +904,6 @@ mp.events.add('admin:refuelVehicle', async (admin, targetId) => {
         admin.call('client:adminNotify', ['success', `Машина заправлена для ${target.socialClub}`]);
         target.call('client:adminNotify', ['success', 'Ваша машина заправлена']);
         
-        
     } catch (err) {
         console.error('[Admin] Ошибка заправки:', err);
     }
@@ -945,8 +929,6 @@ mp.events.add('admin:getOnlineStats', async (admin) => {
 // ===== САМЫЕ АКТИВНЫЕ ИГРОКИ =====
 mp.events.add('admin:getTopPlayers', async (admin) => {
     try {
-        
-        // Пытаемся получить из player_activity
         let [players] = [];
         
         try {
@@ -965,16 +947,11 @@ mp.events.add('admin:getTopPlayers', async (admin) => {
                 ORDER BY total_time DESC
                 LIMIT 20
             `);
-            
-            
         } catch (paErr) {
-            console.log('[Admin] player_activity недоступна:', paErr.sqlMessage || paErr.message);
+            // player_activity table might not exist
         }
         
-        // Если нет данных, используем альтернативный запрос
         if (!players || players.length === 0) {
-            console.log('[Admin] Используем альтернативный запрос по users');
-            
             [players] = await db.query(`
                 SELECT 
                     u.login,
@@ -989,44 +966,16 @@ mp.events.add('admin:getTopPlayers', async (admin) => {
                 ORDER BY u.last_login DESC
                 LIMIT 20
             `);
-            
         }
         
-        // Если всё ещё пусто, тестовые данные
         if (!players || players.length === 0) {
-            console.log('[Admin] ⚠️ Нет данных, создаём тестовые');
-            
-            players = [
-                {
-                    login: 'Player1',
-                    name: 'John',
-                    surname: 'Doe',
-                    total_time: 36000,
-                    sessions_count: 5
-                },
-                {
-                    login: 'Player2',
-                    name: 'Jane',
-                    surname: 'Smith',
-                    total_time: 28800,
-                    sessions_count: 3
-                },
-                {
-                    login: 'Player3',
-                    name: 'Mike',
-                    surname: 'Johnson',
-                    total_time: 21600,
-                    sessions_count: 2
-                }
-            ];
+            players = [];
         }
         
         admin.call('client:receiveTopPlayers', [JSON.stringify(players)]);
         
     } catch (err) {
-        console.error('[Admin] Критическая ошибка топа игроков:', err);
-        console.error('[Admin] SQL Error:', err.sqlMessage || err.message);
-        
+        console.error('[Admin] Ошибка топа игроков:', err);
         admin.call('client:receiveTopPlayers', [JSON.stringify([])]);
         admin.call('client:adminNotify', ['error', 'Ошибка загрузки топа игроков']);
     }
@@ -1065,7 +1014,7 @@ setInterval(async () => {
     } catch (err) {
         console.error('[Admin] Ошибка логирования статистики:', err);
     }
-}, 300000); // Каждые 5 минут
+}, 300000);
 
 // ===== ОБРАБОТЧИК ДЕЙСТВИЙ ИЗ CEF =====
 mp.events.add('cef:adminAction', async (admin, action, playerId, ...args) => {
@@ -1081,7 +1030,7 @@ mp.events.add('cef:adminAction', async (admin, action, playerId, ...args) => {
             admin.call('client:adminNotify', ['error', 'Игрок не найден']);
             return;
         }
-                
+        
         switch(action) {
             case 'kick':
                 const kickReason = args[0] || 'Без причины';
@@ -1131,9 +1080,6 @@ mp.events.add('cef:adminAction', async (admin, action, playerId, ...args) => {
                 admin.call('client:adminNotify', ['success', `${target.socialClub} ${!currentFreeze ? 'заморожен' : 'разморожен'}`]);
                 target.call('client:adminNotify', [!currentFreeze ? 'warning' : 'success', !currentFreeze ? 'Вы заморожены' : 'Вы разморожены']);
                 break;
-                
-            default:
-                console.log(`[Admin] Неизвестное действие: ${action}`);
         }
         
     } catch (err) {

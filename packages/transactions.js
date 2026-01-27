@@ -3,9 +3,6 @@
 const { db } = require('./database');
 const config = require('./config');
 
-/**
- * Типы транзакций
- */
 const TRANSACTION_TYPES = {
     ADMIN_GIVE: 'admin_give',
     ADMIN_TAKE: 'admin_take',
@@ -18,25 +15,12 @@ const TRANSACTION_TYPES = {
     OTHER: 'other'
 };
 
-// Configuration for suspicious transaction detection
 const SUSPICIOUS_THRESHOLD = config.TRANSACTIONS ? config.TRANSACTIONS.SUSPICIOUS_THRESHOLD : 100000;
 
-// Flag to track if table has been initialized
 let tableInitialized = false;
 
-/**
- * Логирование транзакции
- * @param {number} characterId - ID персонажа
- * @param {string} type - Тип транзакции (из TRANSACTION_TYPES)
- * @param {number} amount - Сумма (положительная для получения, отрицательная для траты)
- * @param {string} currency - Тип валюты ('cash' или 'bank')
- * @param {string} description - Описание транзакции
- * @param {number|null} relatedCharacterId - ID связанного персонажа (для переводов)
- * @param {number|null} adminId - ID админа (для админских действий)
- */
 async function logTransaction(characterId, type, amount, currency, description, relatedCharacterId = null, adminId = null) {
     try {
-        // Create table only on first call
         if (!tableInitialized) {
             await createTransactionTableIfNotExists();
             tableInitialized = true;
@@ -49,7 +33,6 @@ async function logTransaction(characterId, type, amount, currency, description, 
             [characterId, type, amount, currency, description, relatedCharacterId, adminId]
         );
         
-        console.log(`[Transactions] Logged: ${type} - Character ${characterId} - ${currency} $${amount}`);
         return true;
     } catch (err) {
         console.error('[Transactions] Error logging transaction:', err);
@@ -57,9 +40,6 @@ async function logTransaction(characterId, type, amount, currency, description, 
     }
 }
 
-/**
- * Создание таблицы транзакций если не существует
- */
 async function createTransactionTableIfNotExists() {
     try {
         await db.query(`
@@ -80,19 +60,12 @@ async function createTransactionTableIfNotExists() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
     } catch (err) {
-        // Таблица уже существует или ошибка
         if (!err.message.includes('already exists')) {
             console.error('[Transactions] Error creating table:', err);
         }
     }
 }
 
-/**
- * Получение истории транзакций персонажа
- * @param {number} characterId - ID персонажа
- * @param {number} limit - Лимит записей (по умолчанию 50)
- * @returns {Promise<Array>} Массив транзакций
- */
 async function getTransactionHistory(characterId, limit = 50) {
     try {
         const [transactions] = await db.query(
@@ -112,12 +85,6 @@ async function getTransactionHistory(characterId, limit = 50) {
     }
 }
 
-/**
- * Получение статистики транзакций
- * @param {number} characterId - ID персонажа
- * @param {number} days - За сколько дней (по умолчанию 30)
- * @returns {Promise<Object>} Статистика
- */
 async function getTransactionStats(characterId, days = 30) {
     try {
         const [stats] = await db.query(
@@ -152,12 +119,6 @@ async function getTransactionStats(characterId, days = 30) {
     }
 }
 
-/**
- * Получение подозрительных транзакций (для анти-читов)
- * @param {number} threshold - Порог суммы для подозрительной транзакции (по умолчанию из конфигурации)
- * @param {number} hours - За последние N часов
- * @returns {Promise<Array>} Массив подозрительных транзакций
- */
 async function getSuspiciousTransactions(threshold = SUSPICIOUS_THRESHOLD, hours = 24) {
     try {
         const [suspicious] = await db.query(
@@ -178,11 +139,7 @@ async function getSuspiciousTransactions(threshold = SUSPICIOUS_THRESHOLD, hours
     }
 }
 
-/**
- * Команда для просмотра истории транзакций
- */
 function registerTransactionCommands() {
-    // Команда для игроков
     mp.events.addCommand('transactions', async (player) => {
         if (!player.characterId) {
             player.outputChatBox('!{#f44336}Вы не выбрали персонажа!');
@@ -213,7 +170,6 @@ function registerTransactionCommands() {
         }
     });
     
-    // Команда для админов
     mp.events.addCommand('checktransactions', async (player, fullText) => {
         if (!player.adminLevel || player.adminLevel < 3) {
             player.outputChatBox('!{#f44336}Недостаточно прав!');
@@ -256,14 +212,9 @@ function registerTransactionCommands() {
             player.outputChatBox('!{#f44336}Ошибка получения данных');
         }
     });
-    
-    console.log('[Transactions] Commands registered');
 }
 
-// Инициализация
-createTransactionTableIfNotExists().then(() => {
-    console.log('[Transactions] ✅ Transaction system initialized');
-});
+createTransactionTableIfNotExists();
 
 module.exports = {
     TRANSACTION_TYPES,
