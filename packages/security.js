@@ -144,7 +144,7 @@ function resetRateLimit(identifier) {
     loginAttempts.delete(identifier);
 }
 
-// Clean up old rate limit entries periodically
+// Clean up old rate limit entries periodically (every 5 minutes)
 setInterval(() => {
     const now = Date.now();
     for (const [key, value] of loginAttempts.entries()) {
@@ -152,7 +152,7 @@ setInterval(() => {
             loginAttempts.delete(key);
         }
     }
-}, 60000); // Clean every minute
+}, 300000); // Clean every 5 minutes instead of every minute
 
 module.exports = {
     hashPassword,

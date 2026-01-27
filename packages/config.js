@@ -62,5 +62,10 @@ module.exports = {
         MAX_LOGIN_ATTEMPTS: 5,
         LOGIN_COOLDOWN_MS: 60000, // 1 minute
         BCRYPT_ROUNDS: 10
+    },
+    
+    // Transactions
+    TRANSACTIONS: {
+        SUSPICIOUS_THRESHOLD: 100000 // Threshold for suspicious transactions
     }
 };

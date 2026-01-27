@@ -1,6 +1,7 @@
 // ===== TRANSACTION LOGGING SYSTEM =====
 
 const { db } = require('./database');
+const config = require('./config');
 
 /**
  * Типы транзакций
@@ -17,6 +18,12 @@ const TRANSACTION_TYPES = {
     OTHER: 'other'
 };
 
+// Configuration for suspicious transaction detection
+const SUSPICIOUS_THRESHOLD = config.TRANSACTIONS ? config.TRANSACTIONS.SUSPICIOUS_THRESHOLD : 100000;
+
+// Flag to track if table has been initialized
+let tableInitialized = false;
+
 /**
  * Логирование транзакции
  * @param {number} characterId - ID персонажа
@@ -29,8 +36,11 @@ const TRANSACTION_TYPES = {
  */
 async function logTransaction(characterId, type, amount, currency, description, relatedCharacterId = null, adminId = null) {
     try {
-        // Создаем таблицу если не существует
-        await createTransactionTableIfNotExists();
+        // Create table only on first call
+        if (!tableInitialized) {
+            await createTransactionTableIfNotExists();
+            tableInitialized = true;
+        }
         
         await db.query(
             `INSERT INTO transactions 
@@ -144,11 +154,11 @@ async function getTransactionStats(characterId, days = 30) {
 
 /**
  * Получение подозрительных транзакций (для анти-читов)
- * @param {number} threshold - Порог суммы для подозрительной транзакции
+ * @param {number} threshold - Порог суммы для подозрительной транзакции (по умолчанию из конфигурации)
  * @param {number} hours - За последние N часов
  * @returns {Promise<Array>} Массив подозрительных транзакций
  */
-async function getSuspiciousTransactions(threshold = 1000000, hours = 24) {
+async function getSuspiciousTransactions(threshold = SUSPICIOUS_THRESHOLD, hours = 24) {
     try {
         const [suspicious] = await db.query(
             `SELECT t.*, c.name, c.surname, c.user_id 
