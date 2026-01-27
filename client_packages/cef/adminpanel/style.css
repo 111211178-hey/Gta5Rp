@@ -213,23 +213,82 @@ body {
     color: #667eea;
 }
 
+.tab-header h3 {
+    font-size: 18px;
+    margin: 20px 0 15px 0;
+    color: white;
+}
+
+/* ===== КНОПКИ ===== */
+.btn-primary {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, rgba(118, 75, 162, 0.8) 0%, rgba(102, 126, 234, 0.8) 100%);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.8) 0%, rgba(104, 159, 56, 0.8) 100%);
+    border: 2px solid #4caf50;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-success:hover {
+    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.8) 0%, rgba(229, 57, 53, 0.8) 100%);
+    border: 2px solid #f44336;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    box-shadow: 0 5px 20px rgba(244, 67, 54, 0.5);
+    transform: translateY(-2px);
+}
+
 /* ===== ПОИСК ===== */
-.search-box {
-    position: relative;
-    width: 300px;
+.search-container {
+    margin-bottom: 20px;
 }
 
-.search-box i {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.search-box input {
+.search-input {
     width: 100%;
-    padding: 12px 15px 12px 45px;
+    padding: 12px 15px;
     background: rgba(255, 255, 255, 0.05);
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
@@ -238,10 +297,14 @@ body {
     transition: all 0.3s ease;
 }
 
-.search-box input:focus {
+.search-input:focus {
     outline: none;
     background: rgba(255, 255, 255, 0.08);
     border-color: #667eea;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 /* ===== СЕТКА ИГРОКОВ ===== */
@@ -256,7 +319,6 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 20px;
-    cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -288,23 +350,39 @@ body {
 .player-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 15px;
     margin-bottom: 15px;
 }
 
-.player-id {
-    width: 35px;
-    height: 35px;
+.player-avatar {
+    width: 50px;
+    height: 50px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
+    font-size: 24px;
+}
+
+.player-info {
+    flex: 1;
+}
+
+.player-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.player-id {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 5px;
 }
 
 .player-status {
+    display: inline-block;
     padding: 4px 12px;
     background: rgba(76, 175, 80, 0.2);
     border: 1px solid rgba(76, 175, 80, 0.5);
@@ -314,92 +392,112 @@ body {
     font-weight: 600;
 }
 
-.player-name {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 10px;
+.player-status.afk {
+    background: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.5);
+    color: #ff9800;
 }
 
-.player-info {
+.player-details {
     display: flex;
-    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
     gap: 8px;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
 }
 
-.info-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.info-row i {
-    width: 18px;
+.detail-item i {
     color: #667eea;
 }
 
-/* ===== КНОПКИ ДЕЙСТВИЙ ===== */
-.action-btn {
-    padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
+.player-actions {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+    margin-top: 15px;
 }
 
-.action-btn:hover {
+.btn-action {
+    min-width: 35px;
+    height: 35px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action:hover {
     background: rgba(255, 255, 255, 0.12);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.action-btn.primary {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
-    border-color: #667eea;
+.btn-action.btn-info {
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    color: #2196f3;
 }
 
-.action-btn.primary:hover {
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+.btn-action.btn-info:hover {
+    background: rgba(33, 150, 243, 0.3);
 }
 
-.action-btn.success {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.8) 0%, rgba(104, 159, 56, 0.8) 100%);
-    border-color: #4caf50;
+.btn-action.btn-warning {
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid rgba(255, 152, 0, 0.5);
+    color: #ff9800;
 }
 
-.action-btn.success:hover {
-    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.5);
+.btn-action.btn-warning:hover {
+    background: rgba(255, 152, 0, 0.3);
 }
 
-.action-btn.warning {
-    background: linear-gradient(135deg, rgba(255, 152, 0, 0.8) 0%, rgba(255, 193, 7, 0.8) 100%);
-    border-color: #ff9800;
+.btn-action.btn-danger {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #f44336;
 }
 
-.action-btn.warning:hover {
-    box-shadow: 0 5px 20px rgba(255, 152, 0, 0.5);
+.btn-action.btn-danger:hover {
+    background: rgba(244, 67, 54, 0.3);
 }
 
-.action-btn.danger {
-    background: linear-gradient(135deg, rgba(244, 67, 54, 0.8) 0%, rgba(229, 57, 53, 0.8) 100%);
-    border-color: #f44336;
+.btn-action.btn-success {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: #4caf50;
 }
 
-.action-btn.danger:hover {
-    box-shadow: 0 5px 20px rgba(244, 67, 54, 0.5);
+.btn-action.btn-success:hover {
+    background: rgba(76, 175, 80, 0.3);
 }
 
-/* Продолжение в следующем сообщении из-за лимита символов... */
+.btn-action.btn-primary {
+    background: rgba(102, 126, 234, 0.2);
+    border: 1px solid rgba(102, 126, 234, 0.5);
+    color: #667eea;
+}
+
+.btn-action.btn-primary:hover {
+    background: rgba(102, 126, 234, 0.3);
+}
+
 /* ===== КАТЕГОРИИ ТРАНСПОРТА ===== */
-.vehicle-categories {
+.categories-container {
     display: flex;
     gap: 10px;
     margin-bottom: 25px;
@@ -416,9 +514,6 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .category-btn:hover {
@@ -470,16 +565,8 @@ body {
 }
 
 /* ===== ТЕЛЕПОРТ ===== */
-.teleport-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
-
-.teleport-section h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
-    color: white;
+.teleport-section {
+    margin-bottom: 30px;
 }
 
 .locations-grid {
@@ -519,13 +606,15 @@ body {
     color: rgba(255, 255, 255, 0.5);
 }
 
-.coord-inputs {
+.coords-form {
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
-.coord-inputs input {
+.coords-form input {
     flex: 1;
+    min-width: 150px;
     padding: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 2px solid rgba(255, 255, 255, 0.1);
@@ -534,13 +623,17 @@ body {
     font-size: 14px;
 }
 
-.coord-inputs input:focus {
+.coords-form input:focus {
     outline: none;
     border-color: #667eea;
     background: rgba(255, 255, 255, 0.08);
 }
 
 /* ===== ЭКОНОМИКА ===== */
+.economy-section {
+    margin-bottom: 30px;
+}
+
 .economy-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -558,38 +651,22 @@ body {
     gap: 20px;
 }
 
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+.stat-card i {
+    font-size: 32px;
+    color: #667eea;
 }
 
 .stat-label {
     font-size: 13px;
     color: rgba(255, 255, 255, 0.6);
     font-weight: 600;
+    margin-bottom: 5px;
 }
 
 .stat-value {
     font-size: 24px;
     font-weight: 700;
     color: white;
-}
-
-.money-actions h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
 }
 
 .money-form {
@@ -622,7 +699,7 @@ body {
 }
 
 .money-form select {
-    width: 150px;
+    min-width: 150px;
 }
 
 .money-form select option {
@@ -631,15 +708,8 @@ body {
 }
 
 /* ===== МИР ===== */
-.world-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
-
-.control-group h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
+.world-section {
+    margin-bottom: 30px;
 }
 
 .weather-grid {
@@ -657,14 +727,7 @@ body {
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.weather-btn i {
-    font-size: 24px;
+    text-align: center;
 }
 
 .weather-btn:hover {
@@ -673,13 +736,13 @@ body {
     transform: translateY(-2px);
 }
 
-.time-control {
+.time-controls {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-.time-control input[type="range"] {
+.time-controls input[type="range"] {
     flex: 1;
     height: 8px;
     background: rgba(255, 255, 255, 0.1);
@@ -688,7 +751,7 @@ body {
     -webkit-appearance: none;
 }
 
-.time-control input[type="range"]::-webkit-slider-thumb {
+.time-controls input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 20px;
     height: 20px;
@@ -697,7 +760,7 @@ body {
     cursor: pointer;
 }
 
-.time-control input[type="range"]::-moz-range-thumb {
+.time-controls input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -713,13 +776,7 @@ body {
     text-align: center;
 }
 
-.announcement-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.announcement-form textarea {
+textarea {
     width: 100%;
     min-height: 120px;
     padding: 15px;
@@ -733,13 +790,13 @@ body {
     transition: all 0.3s ease;
 }
 
-.announcement-form textarea:focus {
+textarea:focus {
     outline: none;
     border-color: #667eea;
     background: rgba(255, 255, 255, 0.08);
 }
 
-.announcement-form textarea::placeholder {
+textarea::placeholder {
     color: rgba(255, 255, 255, 0.4);
 }
 
@@ -785,22 +842,8 @@ body {
 }
 
 /* ===== НАСТРОЙКИ ===== */
-.settings-groups {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
-
-.setting-group {
-    background: rgba(255, 255, 255, 0.03);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 25px;
-}
-
-.setting-group h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
+.settings-section {
+    margin-bottom: 30px;
 }
 
 .access-levels {
@@ -840,80 +883,13 @@ body {
 .level-badge.level-4 { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
 .level-badge.level-5 { background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); }
 
-/* ===== МОДАЛЬНОЕ ОКНО ===== */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal.show {
-    display: flex;
-}
-
-.modal-content {
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 15px;
-    width: 500px;
-    max-width: 90%;
-    animation: modalSlideIn 0.3s ease;
-}
-
-.modal-header {
-    padding: 20px 25px;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.modal-header h3 {
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.modal-close {
-    width: 35px;
-    height: 35px;
-    background: rgba(244, 67, 54, 0.2);
-    border: none;
-    border-radius: 8px;
-    color: #f44336;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-    background: rgba(244, 67, 54, 0.4);
-    transform: scale(1.1);
-}
-
-.modal-body {
-    padding: 25px;
-}
-
-.player-actions {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.player-actions .action-btn {
-    width: 100%;
-    justify-content: center;
+.level-name {
+    color: white;
+    font-weight: 600;
 }
 
 /* ===== УВЕДОМЛЕНИЯ ===== */
-.notifications {
+.notification-container {
     position: fixed;
     top: 90px;
     right: 20px;
@@ -951,6 +927,370 @@ body {
     border-left-color: #2196f3;
 }
 
+/* ===== РАСШИРЕННЫЕ ФУНКЦИИ ===== */
+
+/* Способности */
+.abilities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.ability-btn {
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.ability-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.ability-btn i {
+    font-size: 32px;
+    color: #667eea;
+}
+
+/* История телепортов */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.history-type {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.history-time {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.history-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Список банов */
+.bans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.ban-item {
+    background: rgba(244, 67, 54, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #f44336;
+}
+
+.ban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ban-player {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+.ban-duration {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ban-duration.permanent {
+    background: rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}
+
+.ban-duration.temporary {
+    background: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+}
+
+.ban-reason {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ban-info {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 15px;
+}
+
+/* Статистика онлайна */
+.stats-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stats-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stats-date {
+    min-width: 100px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-bar-container {
+    flex: 1;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.stats-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 10px;
+    transition: width 0.3s ease;
+}
+
+.stats-value {
+    font-weight: 700;
+    color: white;
+    font-size: 14px;
+}
+
+.stats-avg {
+    min-width: 100px;
+    text-align: right;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Топ игроков */
+.top-players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.top-player-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.top-player-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(5px);
+}
+
+.top-rank {
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.top-rank.gold {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #1a1a2e;
+}
+
+.top-rank.silver {
+    background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+    color: #1a1a2e;
+}
+
+.top-rank.bronze {
+    background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+    color: white;
+}
+
+.top-player-info {
+    flex: 1;
+}
+
+.top-player-name {
+    font-weight: 700;
+    color: white;
+    font-size: 16px;
+}
+
+.top-character-name {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 3px;
+}
+
+.top-player-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.top-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.top-stat i {
+    color: #667eea;
+}
+
+/* Отчёты админов */
+.reports-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.report-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.report-admin {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+.report-date {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.report-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.report-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+}
+
+.report-stat i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.report-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+}
+
+.report-stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.report-notes {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-style: italic;
+}
+
+/* Разделитель секций */
+.section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
+    margin: 30px 0;
+}
+
+/* Пустое сообщение */
+.empty-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 16px;
+}
+
 /* ===== СКРОЛЛБАР ===== */
 ::-webkit-scrollbar {
     width: 8px;
@@ -974,17 +1314,6 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 @keyframes notificationSlideIn {
@@ -1030,12 +1359,148 @@ body {
         gap: 15px;
         align-items: flex-start;
     }
-    
-    .search-box {
-        width: 100%;
+}
+
+/* ===== МОДАЛЬНОЕ ОКНО ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.98) 0%, rgba(40, 40, 70, 0.98) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.5);
+    border-radius: 15px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    width: 35px;
+    height: 35px;
+    background: rgba(244, 67, 54, 0.2);
+    border: 2px solid rgba(244, 67, 54, 0.5);
+    border-radius: 8px;
+    color: #f44336;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: rgba(244, 67, 54, 0.4);
+    border-color: #f44336;
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 15px;
+}
+
+/* ===== СЕТКА ОРУЖИЯ ===== */
+.weapon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.weapon-choice-btn {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.weapon-choice-btn:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+    border-color: rgba(102, 126, 234, 0.8);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.weapon-choice-btn i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.weapon-choice-btn span {
+    font-size: 13px;
+    text-align: center;
+}
+
+/* Анимация появления модального окна */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Адаптивность для модального окна */
+@media (max-width: 768px) {
+    .weapon-grid {
+        grid-template-columns: 1fr;
     }
     
-    .player-actions {
-        grid-template-columns: 1fr;
+    .modal-content {
+        max-width: 95%;
     }
 }

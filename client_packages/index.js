@@ -1370,3 +1370,358 @@ mp.events.add('cef:moveItem', (fromSlot, toSlot) => {
 
 mp.gui.chat.push('!{#4caf50}[Inventory] ✅ Система инвентаря загружена');
 console.log('[Inventory Client] Система инвентаря загружена');
+
+// ===== РАСШИРЕННЫЕ АДМИНСКИЕ ФУНКЦИИ (КЛИЕНТ) - ИСПРАВЛЕНО =====
+
+let spectateMode = false;
+let spectateTarget = null;
+let spectateCamera = null;
+let noclipMode = false;
+let noclipSpeed = 1.0;
+
+console.log('[Admin Extended Client] 🔧 Загрузка расширенных функций...');
+
+// ===== СЛЕЖКА ЗА ИГРОКОМ =====
+mp.events.add('client:startSpectate', (targetId, x, y, z) => {
+    console.log('[Spectate] ✅ Начало слежки за ID:', targetId);
+    
+    spectateMode = true;
+    spectateTarget = targetId;
+    
+    const target = mp.players.atRemoteId(targetId);
+    
+    if (target) {
+        const pos = target.position;
+        spectateCamera = mp.cameras.new('default', 
+            new mp.Vector3(pos.x, pos.y, pos.z + 2), 
+            new mp.Vector3(0, 0, 0), 
+            60
+        );
+        
+        spectateCamera.setActive(true);
+        mp.game.cam.renderScriptCams(true, false, 0, true, false);
+        
+        mp.game.ui.displayRadar(false);
+        mp.gui.chat.show(false);
+        
+        mp.gui.chat.push('!{#00ff00}[Spectate] Слежка активирована. ESC для выхода');
+    } else {
+        console.log('[Spectate] ⚠️ Цель не найдена');
+    }
+});
+
+mp.events.add('client:stopSpectate', () => {
+    console.log('[Spectate] ❌ Остановка слежки');
+    
+    spectateMode = false;
+    spectateTarget = null;
+    
+    if (spectateCamera) {
+        spectateCamera.setActive(false);
+        spectateCamera.destroy();
+        spectateCamera = null;
+        mp.game.cam.renderScriptCams(false, false, 0, true, false);
+    }
+    
+    mp.game.ui.displayRadar(true);
+    mp.gui.chat.show(true);
+    
+    mp.gui.chat.push('!{#00ff00}[Spectate] Слежка остановлена');
+});
+
+// Обновление камеры слежки
+setInterval(() => {
+    if (spectateMode && spectateTarget !== null) {
+        const target = mp.players.atRemoteId(spectateTarget);
+        
+        if (target && spectateCamera) {
+            const pos = target.position;
+            const heading = target.getHeading();
+            
+            const distance = 5.0;
+            const height = 2.0;
+            
+            const radians = (heading * Math.PI) / 180;
+            
+            const camX = pos.x - Math.sin(radians) * distance;
+            const camY = pos.y - Math.cos(radians) * distance;
+            const camZ = pos.z + height;
+            
+            spectateCamera.setCoord(camX, camY, camZ);
+            spectateCamera.pointAtCoord(pos.x, pos.y, pos.z + 1);
+        }
+    }
+}, 50);
+
+// ===== NOCLIP =====
+mp.events.add('client:toggleNoclip', (enabled) => {
+    console.log('[Noclip] 🔄 Статус:', enabled);
+    noclipMode = enabled;
+    
+    if (enabled) {
+        mp.game.ui.displayRadar(false);
+        mp.gui.chat.push('!{#00ff00}[Noclip] Активирован. WASD = движение, Shift = ускорение');
+        mp.gui.chat.push('!{#ffff00}[Noclip] F для выключения');
+    } else {
+        mp.game.ui.displayRadar(true);
+        mp.gui.chat.push('!{#ff9800}[Noclip] Отключен');
+    }
+});
+
+// Обработка Noclip
+setInterval(() => {
+    if (noclipMode) {
+        const player = mp.players.local;
+        const camera = mp.cameras.new('gameplay');
+        const position = player.position;
+        const direction = camera.getDirection();
+        
+        let speed = noclipSpeed;
+        
+        if (mp.game.controls.isControlPressed(0, 21)) speed *= 3; // Shift
+        if (mp.game.controls.isControlPressed(0, 36)) speed *= 0.3; // Ctrl
+        
+        let newX = position.x;
+        let newY = position.y;
+        let newZ = position.z;
+        
+        // W
+        if (mp.game.controls.isControlPressed(0, 32)) {
+            newX += direction.x * speed;
+            newY += direction.y * speed;
+            newZ += direction.z * speed;
+        }
+        
+        // S
+        if (mp.game.controls.isControlPressed(0, 33)) {
+            newX -= direction.x * speed;
+            newY -= direction.y * speed;
+            newZ -= direction.z * speed;
+        }
+        
+        // A
+        if (mp.game.controls.isControlPressed(0, 34)) {
+            const right = camera.getDirection();
+            newX -= right.y * speed;
+            newY += right.x * speed;
+        }
+        
+        // D
+        if (mp.game.controls.isControlPressed(0, 35)) {
+            const right = camera.getDirection();
+            newX += right.y * speed;
+            newY -= right.x * speed;
+        }
+        
+        // Space
+        if (mp.game.controls.isControlPressed(0, 321)) newZ += speed;
+        // Ctrl
+        if (mp.game.controls.isControlPressed(0, 326)) newZ -= speed;
+        
+        player.position = new mp.Vector3(newX, newY, newZ);
+        player.freezePosition(true);
+        
+        camera.destroy();
+    } else {
+        mp.players.local.freezePosition(false);
+    }
+}, 0);
+
+// F для выключения Noclip
+mp.keys.bind(0x46, true, () => {
+    if (noclipMode) {
+        console.log('[Noclip] ⏹️ Отключение через F');
+        mp.events.callRemote('admin:toggleNoclip');
+    }
+});
+
+// ===== СОБЫТИЯ ОТ CEF К СЕРВЕРУ =====
+console.log('[Admin Extended Client] 📡 Регистрация событий CEF→Server...');
+
+// Слежка
+mp.events.add('cef:startSpectate', (playerId) => {
+    console.log('[Client→Server] 🔵 cef:startSpectate →', playerId, 'тип:', typeof playerId);
+    mp.events.callRemote('admin:startSpectate', parseInt(playerId));
+});
+
+mp.events.add('cef:stopSpectate', () => {
+    console.log('[Client→Server] 🔵 cef:stopSpectate');
+    mp.events.callRemote('admin:stopSpectate');
+});
+
+// Админ способности
+mp.events.add('cef:toggleInvisible', () => {
+    console.log('[Client→Server] 🔵 cef:toggleInvisible');
+    mp.events.callRemote('admin:toggleInvisible');
+});
+
+mp.events.add('cef:toggleGodMode', () => {
+    console.log('[Client→Server] 🔵 cef:toggleGodMode');
+    mp.events.callRemote('admin:toggleGodMode');
+});
+
+mp.events.add('cef:toggleNoclip', () => {
+    console.log('[Client→Server] 🔵 cef:toggleNoclip');
+    mp.events.callRemote('admin:toggleNoclip');
+});
+
+// История и списки
+mp.events.add('cef:loadTeleportHistory', () => {
+    console.log('[Client→Server] 🔵 cef:loadTeleportHistory');
+    mp.events.callRemote('admin:getTeleportHistory');
+});
+
+mp.events.add('cef:loadBannedList', () => {
+    console.log('[Client→Server] 🔵 cef:loadBannedList');
+    mp.events.callRemote('admin:getBannedList');
+});
+
+mp.events.add('cef:unbanPlayer', (banId, reason) => {
+    console.log('[Client→Server] 🔵 cef:unbanPlayer:', banId, reason);
+    mp.events.callRemote('admin:unbanPlayer', parseInt(banId), reason);
+});
+
+// Оружие и предметы
+mp.events.add('cef:giveWeapon', (playerId, weaponHash, ammo) => {
+    console.log('[Client→Server] 🔵 cef:giveWeapon:', playerId, weaponHash, ammo);
+    mp.events.callRemote('admin:giveWeapon', parseInt(playerId), weaponHash, parseInt(ammo));
+});
+
+mp.events.add('cef:clearInventory', (playerId) => {
+    console.log('[Client→Server] 🔵 cef:clearInventory:', playerId);
+    mp.events.callRemote('admin:clearInventory', parseInt(playerId));
+});
+
+// Транспорт
+mp.events.add('cef:deleteAllVehicles', () => {
+    console.log('[Client→Server] 🔵 cef:deleteAllVehicles');
+    mp.events.callRemote('admin:deleteAllVehicles');
+});
+
+mp.events.add('cef:repairVehicle', (playerId) => {
+    console.log('[Client→Server] 🔵 cef:repairVehicle:', playerId);
+    mp.events.callRemote('admin:repairVehicle', parseInt(playerId));
+});
+
+mp.events.add('cef:refuelVehicle', (playerId) => {
+    console.log('[Client→Server] 🔵 cef:refuelVehicle:', playerId);
+    mp.events.callRemote('admin:refuelVehicle', parseInt(playerId));
+});
+
+// Статистика
+mp.events.add('cef:loadOnlineStats', () => {
+    console.log('[Client→Server] 🔵 cef:loadOnlineStats');
+    mp.events.callRemote('admin:getOnlineStats');
+});
+
+mp.events.add('cef:loadTopPlayers', () => {
+    console.log('[Client→Server] 🔵 cef:loadTopPlayers');
+    mp.events.callRemote('admin:getTopPlayers');
+});
+
+mp.events.add('cef:loadAdminReports', () => {
+    console.log('[Client→Server] 🔵 cef:loadAdminReports');
+    mp.events.callRemote('admin:getAdminReports');
+});
+
+// ===== ПОЛУЧЕНИЕ ДАННЫХ С СЕРВЕРА =====
+console.log('[Admin Extended Client] 📥 Регистрация событий Server→Client...');
+
+mp.events.add('client:receiveTeleportHistory', (historyJson) => {
+    console.log('[Server→Client] 🟢 receiveTeleportHistory, длина:', historyJson ? historyJson.length : 0);
+    
+    if (!isAdminPanelOpen || !adminBrowser) {
+        console.log('[Client] ⚠️ Панель закрыта или браузер не готов');
+        return;
+    }
+    
+    try {
+        // Экранируем кавычки и обратные слэши
+        const safeJson = historyJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        adminBrowser.execute(`displayTeleportHistory('${safeJson}')`);
+        console.log('[Client] ✅ История телепортов передана в CEF');
+    } catch (err) {
+        console.log('[Client] ❌ Ошибка передачи истории:', err);
+    }
+});
+
+mp.events.add('client:receiveBannedList', (bansJson) => {
+    console.log('[Server→Client] 🟢 receiveBannedList, длина:', bansJson ? bansJson.length : 0);
+    
+    if (!isAdminPanelOpen || !adminBrowser) {
+        console.log('[Client] ⚠️ Панель закрыта');
+        return;
+    }
+    
+    try {
+        const safeJson = bansJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        adminBrowser.execute(`displayBannedList('${safeJson}')`);
+        console.log('[Client] ✅ Список банов передан в CEF');
+    } catch (err) {
+        console.log('[Client] ❌ Ошибка передачи банов:', err);
+    }
+});
+
+mp.events.add('client:receiveOnlineStats', (statsJson) => {
+    console.log('[Server→Client] 🟢 receiveOnlineStats, длина:', statsJson ? statsJson.length : 0);
+    
+    if (!isAdminPanelOpen || !adminBrowser) {
+        console.log('[Client] ⚠️ Панель закрыта');
+        return;
+    }
+    
+    try {
+        const safeJson = statsJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        adminBrowser.execute(`displayOnlineStats('${safeJson}')`);
+        console.log('[Client] ✅ Статистика онлайна передана в CEF');
+    } catch (err) {
+        console.log('[Client] ❌ Ошибка передачи статистики:', err);
+    }
+});
+
+mp.events.add('client:receiveTopPlayers', (playersJson) => {
+    console.log('[Server→Client] 🟢 receiveTopPlayers, длина:', playersJson ? playersJson.length : 0);
+    
+    if (!isAdminPanelOpen || !adminBrowser) {
+        console.log('[Client] ⚠️ Панель закрыта');
+        return;
+    }
+    
+    try {
+        const safeJson = playersJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        adminBrowser.execute(`displayTopPlayers('${safeJson}')`);
+        console.log('[Client] ✅ Топ игроков передан в CEF');
+    } catch (err) {
+        console.log('[Client] ❌ Ошибка передачи топа:', err);
+    }
+});
+
+mp.events.add('client:receiveAdminReports', (reportsJson) => {
+    console.log('[Server→Client] 🟢 receiveAdminReports, длина:', reportsJson ? reportsJson.length : 0);
+    
+    if (!isAdminPanelOpen || !adminBrowser) {
+        console.log('[Client] ⚠️ Панель закрыта');
+        return;
+    }
+    
+    try {
+        const safeJson = reportsJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        adminBrowser.execute(`displayAdminReports('${safeJson}')`);
+        console.log('[Client] ✅ Отчёты админов переданы в CEF');
+    } catch (err) {
+        console.log('[Client] ❌ Ошибка передачи отчётов:', err);
+    }
+});
+
+console.log('[Admin Extended Client] ✅ Все расширенные события зарегистрированы');
+console.log('[Admin Extended Client] 📋 Список событий:');
+console.log('  ✓ cef:startSpectate → admin:startSpectate');
+console.log('  ✓ cef:toggleInvisible → admin:toggleInvisible');
+console.log('  ✓ cef:toggleGodMode → admin:toggleGodMode');
+console.log('  ✓ cef:toggleNoclip → admin:toggleNoclip');
+console.log('  ✓ cef:loadTeleportHistory → admin:getTeleportHistory');
+console.log('  ✓ cef:loadBannedList → admin:getBannedList');
+console.log('  ✓ cef:loadOnlineStats → admin:getOnlineStats');
+console.log('  ✓ cef:loadTopPlayers → admin:getTopPlayers');
+console.log('  ✓ cef:loadAdminReports → admin:getAdminReports');
+console.log('[Admin Extended Client] 🚀 Готов к работе!');

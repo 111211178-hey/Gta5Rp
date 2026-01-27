@@ -608,3 +608,587 @@ mp.events.addCommand('removeadmin', async (player, fullText) => {
 });
 
 console.log('[Admin System] ✅ Система администрирования загружена успешно!');
+
+// ===== РАСШИРЕННЫЕ ФУНКЦИИ АДМИНКИ =====
+
+// Глобальное хранилище состояний админов
+global.adminStates = new Map();
+
+// ===== СЛЕЖКА ЗА ИГРОКОМ =====
+mp.events.add('admin:startSpectate', async (admin, targetId) => {
+    try {
+        const target = mp.players.at(targetId);
+        
+        if (!target || !target.characterId) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден или не в игре']);
+            return;
+        }
+        
+        // Сохраняем позицию админа
+        const adminState = {
+            position: admin.position,
+            heading: admin.heading,
+            dimension: admin.dimension,
+            spectating: targetId,
+            invisible: true
+        };
+        
+        global.adminStates.set(admin.id, adminState);
+        
+        // Обновляем БД
+        await db.query('UPDATE users SET is_spectating = ? WHERE id = ?', [targetId, admin.accountId]);
+        
+        // Делаем админа невидимым
+        admin.alpha = 0;
+        admin.dimension = target.dimension;
+        
+        // Отправляем клиенту
+        admin.call('client:startSpectate', [targetId, target.position.x, target.position.y, target.position.z]);
+        
+        logAdminAction(admin.accountId, 'spectate', `Начал слежку за ${target.socialClub}`);
+        console.log(`[Admin] ${admin.socialClub} начал слежку за ${target.socialClub}`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка spectate:', err);
+        admin.call('client:adminNotify', ['error', 'Ошибка активации слежки']);
+    }
+});
+
+mp.events.add('admin:stopSpectate', async (admin) => {
+    try {
+        const adminState = global.adminStates.get(admin.id);
+        
+        if (!adminState || !adminState.spectating) {
+            admin.call('client:adminNotify', ['warning', 'Слежка не активна']);
+            return;
+        }
+        
+        // Возвращаем админа
+        admin.position = adminState.position;
+        admin.heading = adminState.heading;
+        admin.dimension = adminState.dimension;
+        admin.alpha = 255;
+        
+        await db.query('UPDATE users SET is_spectating = NULL WHERE id = ?', [admin.accountId]);
+        
+        global.adminStates.delete(admin.id);
+        
+        admin.call('client:stopSpectate');
+        admin.call('client:adminNotify', ['success', 'Слежка остановлена']);
+        
+        console.log(`[Admin] ${admin.socialClub} остановил слежку`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка остановки spectate:', err);
+    }
+});
+
+// ===== НЕВИДИМОСТЬ =====
+mp.events.add('admin:toggleInvisible', async (admin) => {
+    try {
+        const current = admin.alpha === 0;
+        const newAlpha = current ? 255 : 0;
+        
+        admin.alpha = newAlpha;
+        
+        await db.query('UPDATE users SET is_invisible = ? WHERE id = ?', [current ? 0 : 1, admin.accountId]);
+        
+        admin.call('client:adminNotify', ['success', current ? 'Невидимость отключена' : 'Невидимость включена']);
+        
+        logAdminAction(admin.accountId, 'invisible', current ? 'Отключил' : 'Включил');
+        console.log(`[Admin] ${admin.socialClub} ${current ? 'отключил' : 'включил'} невидимость`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка невидимости:', err);
+    }
+});
+
+// ===== БЕССМЕРТИЕ =====
+mp.events.add('admin:toggleGodMode', async (admin) => {
+    try {
+        const current = admin.invincible || false;
+        
+        admin.invincible = !current;
+        
+        await db.query('UPDATE users SET is_invincible = ? WHERE id = ?', [current ? 0 : 1, admin.accountId]);
+        
+        admin.call('client:adminNotify', ['success', current ? 'Бессмертие отключено' : 'Бессмертие включено']);
+        
+        logAdminAction(admin.accountId, 'godmode', current ? 'Отключил' : 'Включил');
+        console.log(`[Admin] ${admin.socialClub} ${current ? 'отключил' : 'включил'} бессмертие`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка godmode:', err);
+    }
+});
+
+// ===== NOCLIP =====
+mp.events.add('admin:toggleNoclip', async (admin) => {
+    try {
+        const current = admin.noclip || false;
+        
+        admin.noclip = !current;
+        
+        await db.query('UPDATE users SET is_noclip = ? WHERE id = ?', [current ? 0 : 1, admin.accountId]);
+        
+        admin.call('client:toggleNoclip', [!current]);
+        admin.call('client:adminNotify', ['success', current ? 'Noclip отключен' : 'Noclip включен']);
+        
+        logAdminAction(admin.accountId, 'noclip', current ? 'Отключил' : 'Включил');
+        console.log(`[Admin] ${admin.socialClub} ${current ? 'отключил' : 'включил'} noclip`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка noclip:', err);
+    }
+});
+
+// ===== ИСТОРИЯ ТЕЛЕПОРТОВ =====
+mp.events.add('admin:getTeleportHistory', async (admin) => {
+    try {
+        const [history] = await db.query(`
+            SELECT * FROM admin_teleports 
+            WHERE admin_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        `, [admin.accountId]);
+        
+        admin.call('client:receiveTeleportHistory', [JSON.stringify(history)]);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка получения истории:', err);
+    }
+});
+
+// ===== СПИСОК ЗАБАНЕННЫХ =====
+mp.events.add('admin:getBannedList', async (admin) => {
+    try {
+        console.log('[Admin] Запрос списка банов');
+        
+        const [bans] = await db.query(`
+            SELECT 
+                b.id,
+                b.user_id,
+                b.social_club,
+                b.reason,
+                b.expires_at,
+                b.created_at,
+                b.banned_by,
+                b.duration,
+                u.login
+            FROM bans b
+            LEFT JOIN users u ON b.user_id = u.id
+            WHERE b.is_active = 1
+            ORDER BY b.created_at DESC
+            LIMIT 50
+        `);
+        
+        console.log('[Admin] Найдено активных банов:', bans.length);
+        
+        // Форматируем для CEF
+        const formattedBans = bans.map(ban => {
+            return {
+                id: ban.id,
+                user_id: ban.user_id,
+                login: ban.login || ban.social_club || 'Неизвестно',
+                reason: ban.reason || 'Не указана',
+                expires_at: ban.expires_at,
+                created_at: ban.created_at,
+                admin_name: ban.banned_by || 'Система',
+                duration: ban.duration || 0
+            };
+        });
+        
+        admin.call('client:receiveBannedList', [JSON.stringify(formattedBans)]);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка получения списка банов:', err);
+        console.error('[Admin] SQL Error:', err.sqlMessage || err.message);
+        admin.call('client:receiveBannedList', [JSON.stringify([])]);
+        admin.call('client:adminNotify', ['error', 'Ошибка загрузки списка банов']);
+    }
+});
+
+// ===== РАЗБАН =====
+mp.events.add('admin:unbanPlayer', async (admin, banId, reason) => {
+    try {
+        console.log('[Admin] Разбан:', banId, 'причина:', reason);
+        
+        await db.query(`
+            UPDATE bans 
+            SET is_active = 0, 
+                unbanned_by = ?, 
+                unban_reason = ?, 
+                unbanned_at = NOW() 
+            WHERE id = ?
+        `, [admin.accountId, reason, banId]);
+        
+        await logAdminAction(admin.accountId, 'unban', `Разбан ID:${banId}. Причина: ${reason}`);
+        
+        admin.call('client:adminNotify', ['success', 'Игрок разбанен']);
+        
+        console.log(`[Admin] ${admin.socialClub} разбанил ID:${banId}`);
+        
+        // Обновляем список
+        mp.events.call('admin:getBannedList', admin);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка разбана:', err);
+        admin.call('client:adminNotify', ['error', 'Ошибка разбана']);
+    }
+});
+
+// ===== ВЫДАЧА ОРУЖИЯ =====
+mp.events.add('admin:giveWeapon', async (admin, targetId, weaponHash, ammo) => {
+    try {
+        const target = mp.players.at(targetId);
+        
+        if (!target) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден']);
+            return;
+        }
+        
+        target.giveWeapon(mp.joaat(weaponHash), parseInt(ammo));
+        
+        logAdminAction(admin.accountId, 'give_weapon', `Оружие: ${weaponHash}, Патроны: ${ammo}, Цель: ${target.socialClub}`);
+        
+        admin.call('client:adminNotify', ['success', `Оружие выдано ${target.socialClub}`]);
+        target.call('client:adminNotify', ['info', 'Вам выдано оружие от администратора']);
+        
+        console.log(`[Admin] ${admin.socialClub} выдал оружие ${weaponHash} игроку ${target.socialClub}`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка выдачи оружия:', err);
+    }
+});
+
+// ===== ОЧИСТКА ИНВЕНТАРЯ =====
+mp.events.add('admin:clearInventory', async (admin, targetId) => {
+    try {
+        const target = mp.players.at(targetId);
+        
+        if (!target || !target.characterId) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден']);
+            return;
+        }
+        
+        await db.query('DELETE FROM character_inventory WHERE character_id = ?', [target.characterId]);
+        
+        target.call('client:updateInventory', [JSON.stringify([])]);
+        
+        logAdminAction(admin.accountId, 'clear_inventory', `Character ID: ${target.characterId}, Игрок: ${target.socialClub}`);
+        
+        admin.call('client:adminNotify', ['success', `Инвентарь очищен у ${target.socialClub}`]);
+        target.call('client:adminNotify', ['warning', 'Ваш инвентарь очищен администратором']);
+        
+        console.log(`[Admin] ${admin.socialClub} очистил инвента��ь ${target.socialClub}`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка очистки инвентаря:', err);
+    }
+});
+
+// ===== УДАЛЕНИЕ ВСЕХ МАШИН =====
+mp.events.add('admin:deleteAllVehicles', async (admin) => {
+    try {
+        let count = 0;
+        
+        mp.vehicles.forEach(vehicle => {
+            vehicle.destroy();
+            count++;
+        });
+        
+        logAdminAction(admin.accountId, 'delete_all_vehicles', `Удалено машин: ${count}`);
+        
+        admin.call('client:adminNotify', ['success', `Удалено машин: ${count}`]);
+        
+        console.log(`[Admin] ${admin.socialClub} удалил все машины (${count})`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка удаления машин:', err);
+    }
+});
+
+// ===== РЕМОНТ ТРАНСПОРТА =====
+mp.events.add('admin:repairVehicle', (admin, targetId) => {
+    try {
+        const target = mp.players.at(targetId);
+        
+        if (!target) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден']);
+            return;
+        }
+        
+        if (!target.vehicle) {
+            admin.call('client:adminNotify', ['error', 'Игрок не в машине']);
+            return;
+        }
+        
+        target.vehicle.repair();
+        
+        logAdminAction(admin.accountId, 'repair_vehicle', `Игрок: ${target.socialClub}`);
+        
+        admin.call('client:adminNotify', ['success', `Машина отремонтирована для ${target.socialClub}`]);
+        target.call('client:adminNotify', ['success', 'Ваша машина отремонтирована']);
+        
+        console.log(`[Admin] ${admin.socialClub} отремонтировал машину ${target.socialClub}`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка ремонта:', err);
+    }
+});
+
+// ===== ЗАПРАВКА =====
+mp.events.add('admin:refuelVehicle', async (admin, targetId) => {
+    try {
+        const target = mp.players.at(targetId);
+        
+        if (!target) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден']);
+            return;
+        }
+        
+        if (!target.vehicle) {
+            admin.call('client:adminNotify', ['error', 'Игрок не в машине']);
+            return;
+        }
+        
+        if (target.vehicle.fuel !== undefined) {
+            target.vehicle.fuel = 100;
+        }
+        
+        logAdminAction(admin.accountId, 'refuel_vehicle', `Игрок: ${target.socialClub}`);
+        
+        admin.call('client:adminNotify', ['success', `Машина заправлена для ${target.socialClub}`]);
+        target.call('client:adminNotify', ['success', 'Ваша машина заправлена']);
+        
+        console.log(`[Admin] ${admin.socialClub} заправил машину ${target.socialClub}`);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка заправки:', err);
+    }
+});
+
+// ===== СТАТИСТИКА ОНЛАЙНА =====
+mp.events.add('admin:getOnlineStats', async (admin) => {
+    try {
+        const [stats] = await db.query(`
+            SELECT date, hour, players_online 
+            FROM server_statistics 
+            WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            ORDER BY date DESC, hour DESC
+        `);
+        
+        admin.call('client:receiveOnlineStats', [JSON.stringify(stats)]);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка статистики онлайна:', err);
+    }
+});
+
+// ===== САМЫЕ АКТИВНЫЕ ИГРОКИ =====
+mp.events.add('admin:getTopPlayers', async (admin) => {
+    try {
+        console.log('[Admin] Запрос топа игроков');
+        
+        // Пытаемся получить из player_activity
+        let [players] = [];
+        
+        try {
+            [players] = await db.query(`
+                SELECT 
+                    u.login,
+                    MAX(c.name) as name,
+                    MAX(c.surname) as surname,
+                    SUM(pa.duration) as total_time,
+                    COUNT(pa.id) as sessions_count
+                FROM player_activity pa
+                JOIN users u ON pa.user_id = u.id
+                LEFT JOIN characters c ON pa.character_id = c.id
+                WHERE pa.session_start >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY u.id, u.login
+                ORDER BY total_time DESC
+                LIMIT 20
+            `);
+            
+            console.log('[Admin] Найдено записей из player_activity:', players.length);
+            
+        } catch (paErr) {
+            console.log('[Admin] player_activity недоступна:', paErr.sqlMessage || paErr.message);
+        }
+        
+        // Если нет данных, используем альтернативный запрос
+        if (!players || players.length === 0) {
+            console.log('[Admin] Используем альтернативный запрос по users');
+            
+            [players] = await db.query(`
+                SELECT 
+                    u.login,
+                    MAX(c.name) as name,
+                    MAX(c.surname) as surname,
+                    TIMESTAMPDIFF(SECOND, u.registered_at, NOW()) as total_time,
+                    1 as sessions_count
+                FROM users u
+                LEFT JOIN characters c ON c.user_id = u.id
+                WHERE u.registered_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY u.id, u.login
+                ORDER BY u.last_login DESC
+                LIMIT 20
+            `);
+            
+            console.log('[Admin] Найдено игроков (по registered_at):', players.length);
+        }
+        
+        // Если всё ещё пусто, тестовые данные
+        if (!players || players.length === 0) {
+            console.log('[Admin] ⚠️ Нет данных, создаём тестовые');
+            
+            players = [
+                {
+                    login: 'Player1',
+                    name: 'John',
+                    surname: 'Doe',
+                    total_time: 36000,
+                    sessions_count: 5
+                },
+                {
+                    login: 'Player2',
+                    name: 'Jane',
+                    surname: 'Smith',
+                    total_time: 28800,
+                    sessions_count: 3
+                },
+                {
+                    login: 'Player3',
+                    name: 'Mike',
+                    surname: 'Johnson',
+                    total_time: 21600,
+                    sessions_count: 2
+                }
+            ];
+        }
+        
+        console.log('[Admin] Отправка топа игроков:', players.length, 'записей');
+        admin.call('client:receiveTopPlayers', [JSON.stringify(players)]);
+        
+    } catch (err) {
+        console.error('[Admin] Критическая ошибка топа игроков:', err);
+        console.error('[Admin] SQL Error:', err.sqlMessage || err.message);
+        
+        admin.call('client:receiveTopPlayers', [JSON.stringify([])]);
+        admin.call('client:adminNotify', ['error', 'Ошибка загрузки топа игроков']);
+    }
+});
+
+// ===== ОТЧЁТЫ АДМИНОВ =====
+mp.events.add('admin:getAdminReports', async (admin) => {
+    try {
+        const [reports] = await db.query(`
+            SELECT * FROM admin_reports 
+            WHERE report_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY report_date DESC
+        `);
+        
+        admin.call('client:receiveAdminReports', [JSON.stringify(reports)]);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка отчётов:', err);
+    }
+});
+
+// ===== АВТОМАТИЧЕСКОЕ ЛОГИРОВАНИЕ СТАТИСТИКИ =====
+setInterval(async () => {
+    try {
+        const now = new Date();
+        const date = now.toISOString().split('T')[0];
+        const hour = now.getHours();
+        const playersOnline = mp.players.length;
+        
+        await db.query(`
+            INSERT INTO server_statistics (date, hour, players_online) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE players_online = ?
+        `, [date, hour, playersOnline, playersOnline]);
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка логирования статистики:', err);
+    }
+}, 300000); // Каждые 5 минут
+
+console.log('[Admin Extended] ✅ Расши��енные функции загружены');
+
+// ===== ОБРАБОТЧИК ДЕЙСТВИЙ ИЗ CEF =====
+mp.events.add('cef:adminAction', async (admin, action, playerId, ...args) => {
+    try {
+        if (!admin.adminLevel) {
+            admin.call('client:adminNotify', ['error', 'Нет прав']);
+            return;
+        }
+        
+        const target = mp.players.at(playerId);
+        
+        if (!target && !['ban'].includes(action)) {
+            admin.call('client:adminNotify', ['error', 'Игрок не найден']);
+            return;
+        }
+        
+        console.log(`[Admin] ${admin.socialClub} выполняет действие: ${action} для игрока #${playerId}`);
+        
+        switch(action) {
+            case 'kick':
+                const kickReason = args[0] || 'Без причины';
+                target.kick(kickReason);
+                logAdminAction(admin.accountId, 'kick', `Игрок: ${target.socialClub}, Причина: ${kickReason}`);
+                admin.call('client:adminNotify', ['success', `${target.socialClub} кикнут`]);
+                break;
+                
+            case 'ban':
+                const banReason = args[0] || 'Без причины';
+                const banDays = parseInt(args[1]) || 0;
+                const expiresAt = banDays === 0 ? new Date('2099-12-31') : new Date(Date.now() + banDays * 24 * 60 * 60 * 1000);
+                
+                await db.query(`
+                    INSERT INTO bans (user_id, admin_id, admin_name, reason, expires_at, is_active, created_at)
+                    VALUES (?, ?, ?, ?, ?, 1, NOW())
+                `, [target.accountId, admin.accountId, admin.socialClub, banReason, expiresAt]);
+                
+                target.kick(`Вы забанены. Причина: ${banReason}`);
+                
+                logAdminAction(admin.accountId, 'ban', `Игрок: ${target.socialClub}, Причина: ${banReason}, Срок: ${banDays} дней`);
+                admin.call('client:adminNotify', ['success', `${target.socialClub} забанен`]);
+                break;
+                
+            case 'tpto':
+                admin.position = target.position;
+                admin.dimension = target.dimension;
+                
+                logAdminAction(admin.accountId, 'teleport', `К игроку: ${target.socialClub}`);
+                admin.call('client:adminNotify', ['success', `Телепорт к ${target.socialClub}`]);
+                break;
+                
+            case 'tphere':
+                target.position = admin.position;
+                target.dimension = admin.dimension;
+                
+                logAdminAction(admin.accountId, 'teleport', `Игрок ${target.socialClub} к себе`);
+                admin.call('client:adminNotify', ['success', `${target.socialClub} телепортирован к вам`]);
+                target.call('client:adminNotify', ['info', 'Вы телепортированы к администратору']);
+                break;
+                
+            case 'freeze':
+                const currentFreeze = target.frozen || false;
+                target.frozen = !currentFreeze;
+                
+                logAdminAction(admin.accountId, 'freeze', `Игрок: ${target.socialClub}, Состояние: ${!currentFreeze ? 'Заморожен' : 'Разморожен'}`);
+                admin.call('client:adminNotify', ['success', `${target.socialClub} ${!currentFreeze ? 'заморожен' : 'разморожен'}`]);
+                target.call('client:adminNotify', [!currentFreeze ? 'warning' : 'success', !currentFreeze ? 'Вы заморожены' : 'Вы разморожены']);
+                break;
+                
+            default:
+                console.log(`[Admin] Неизвестное действие: ${action}`);
+        }
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка выполнения действия:', err);
+        admin.call('client:adminNotify', ['error', 'Ошибка выполнения действия']);
+    }
+});

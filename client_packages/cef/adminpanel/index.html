@@ -67,6 +67,21 @@
                         <i class="fas fa-list"></i>
                         <span>Логи</span>
                     </div>
+                    
+                    <!-- НОВЫЕ РАЗДЕЛЫ -->
+                    <div class="menu-item" data-tab="abilities">
+                        <i class="fas fa-magic"></i>
+                        <span>Способности</span>
+                    </div>
+                    <div class="menu-item" data-tab="bans">
+                        <i class="fas fa-gavel"></i>
+                        <span>Баны</span>
+                    </div>
+                    <div class="menu-item" data-tab="statistics">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Статистика</span>
+                    </div>
+                    
                     <div class="menu-item" data-tab="settings">
                         <i class="fas fa-cog"></i>
                         <span>Настройки</span>
@@ -80,14 +95,16 @@
                 <div class="tab-content active" id="tab-players">
                     <div class="tab-header">
                         <h2><i class="fas fa-users"></i> Управление игроками</h2>
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="playerSearch" placeholder="Поиск игрока...">
-                        </div>
+                        <button class="btn-primary" id="refreshPlayersBtn">
+                            <i class="fas fa-sync"></i> Обновить
+                        </button>
                     </div>
-
+                    <!-- ✅ ДОБАВЛЕН ПОИСК -->
+                    <div class="search-container">
+                        <input type="text" id="playerSearch" placeholder="🔍 Поиск игрока по имени или ID..." class="search-input">
+                    </div>
                     <div class="players-grid" id="playersGrid">
-                        <!-- Карточки игроков генерируются JS -->
+                        <!-- Игроки загружаются динамически -->
                     </div>
                 </div>
 
@@ -96,30 +113,17 @@
                     <div class="tab-header">
                         <h2><i class="fas fa-car"></i> Управление транспортом</h2>
                     </div>
-
-                    <div class="vehicle-categories">
-                        <button class="category-btn active" data-category="super">
-                            <i class="fas fa-gauge-high"></i> Суперкары
-                        </button>
-                        <button class="category-btn" data-category="sports">
-                            <i class="fas fa-car-side"></i> Спорткары
-                        </button>
-                        <button class="category-btn" data-category="suvs">
-                            <i class="fas fa-truck"></i> Внедорожники
-                        </button>
-                        <button class="category-btn" data-category="motorcycles">
-                            <i class="fas fa-motorcycle"></i> Мотоциклы
-                        </button>
-                        <button class="category-btn" data-category="helicopters">
-                            <i class="fas fa-helicopter"></i> В��ртолёты
-                        </button>
-                        <button class="category-btn" data-category="planes">
-                            <i class="fas fa-plane"></i> Самолёты
-                        </button>
+                    <!-- ✅ ДОБАВЛЕНЫ КАТЕГОРИИ -->
+                    <div class="categories-container">
+                        <button class="category-btn active" data-category="super">Суперкары</button>
+                        <button class="category-btn" data-category="sports">Спорткары</button>
+                        <button class="category-btn" data-category="suvs">Внедорожники</button>
+                        <button class="category-btn" data-category="motorcycles">Мотоциклы</button>
+                        <button class="category-btn" data-category="helicopters">Вертолеты</button>
+                        <button class="category-btn" data-category="planes">Самолеты</button>
                     </div>
-
                     <div class="vehicles-grid" id="vehiclesGrid">
-                        <!-- Карточки транспорта генерируются JS -->
+                        <!-- Транспорт загружается динамически -->
                     </div>
                 </div>
 
@@ -128,25 +132,24 @@
                     <div class="tab-header">
                         <h2><i class="fas fa-location-dot"></i> Телепортация</h2>
                     </div>
-
-                    <div class="teleport-sections">
-                        <div class="teleport-section">
-                            <h3>Популярные локации</h3>
-                            <div class="locations-grid" id="locationsGrid">
-                                <!-- Локации генерируются JS -->
-                            </div>
+                    
+                    <div class="teleport-section">
+                        <h3>Быстрые локации</h3>
+                        <div class="locations-grid" id="locationsGrid">
+                            <!-- Локации загружаются динамически -->
                         </div>
+                    </div>
 
-                        <div class="teleport-section">
-                            <h3>Телепорт по координатам</h3>
-                            <div class="coord-inputs">
-                                <input type="number" id="tpX" placeholder="X" step="0.1">
-                                <input type="number" id="tpY" placeholder="Y" step="0.1">
-                                <input type="number" id="tpZ" placeholder="Z" step="0.1">
-                                <button class="action-btn primary" id="tpCoordBtn">
-                                    <i class="fas fa-location-arrow"></i> Телепорт
-                                </button>
-                            </div>
+                    <div class="teleport-section">
+                        <h3>Телепорт по координатам</h3>
+                        <div class="coords-form">
+                            <!-- ✅ ИСПРАВЛЕНЫ ID -->
+                            <input type="number" id="tpX" placeholder="X" step="0.1">
+                            <input type="number" id="tpY" placeholder="Y" step="0.1">
+                            <input type="number" id="tpZ" placeholder="Z" step="0.1">
+                            <button class="btn-primary" id="tpCoordBtn">
+                                <i class="fas fa-location-arrow"></i> Телепорт
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -156,52 +159,50 @@
                     <div class="tab-header">
                         <h2><i class="fas fa-coins"></i> Экономика</h2>
                     </div>
-
-                    <div class="economy-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-label">Всего денег</span>
-                                <span class="stat-value" id="totalMoney">$0</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-building-columns"></i>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-label">В банках</span>
-                                <span class="stat-value" id="totalBank">$0</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-label">Наличные</span>
-                                <span class="stat-value" id="totalCash">$0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="money-actions">
-                        <h3>Выдать/Снять деньги</h3>
+                    
+                    <div class="economy-section">
+                        <h3>Управление деньгами</h3>
+                        <!-- ✅ ДОБАВЛЕНА ФОРМА -->
                         <div class="money-form">
-                            <input type="number" id="moneyPlayerId" placeholder="ID игрока">
-                            <input type="number" id="moneyAmount" placeholder="Сумма">
+                            <input type="number" id="moneyPlayerId" placeholder="ID игрока" min="0">
+                            <input type="number" id="moneyAmount" placeholder="Сумма" min="1">
                             <select id="moneyType">
                                 <option value="cash">Наличные</option>
                                 <option value="bank">Банк</option>
                             </select>
-                            <button class="action-btn success" id="giveMoneyBtn">
+                            <button class="btn-success" id="giveMoneyBtn">
                                 <i class="fas fa-plus"></i> Выдать
                             </button>
-                            <button class="action-btn danger" id="takeMoneyBtn">
-                                <i class="fas fa-minus"></i> Снять
+                            <button class="btn-danger" id="takeMoneyBtn">
+                                <i class="fas fa-minus"></i> Забрать
                             </button>
+                        </div>
+                    </div>
+                    
+                    <div class="economy-section">
+                        <h3>Статистика</h3>
+                        <div class="economy-stats" id="economyStats">
+                            <div class="stat-card">
+                                <i class="fas fa-wallet"></i>
+                                <div>
+                                    <span class="stat-label">Всего денег</span>
+                                    <span class="stat-value" id="totalMoney">$0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-university"></i>
+                                <div>
+                                    <span class="stat-label">В банках</span>
+                                    <span class="stat-value" id="totalBank">$0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-money-bill"></i>
+                                <div>
+                                    <span class="stat-label">Наличных</span>
+                                    <span class="stat-value" id="totalCash">$0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -211,40 +212,35 @@
                     <div class="tab-header">
                         <h2><i class="fas fa-globe"></i> Управление миром</h2>
                     </div>
-
-                    <div class="world-controls">
-                        <div class="control-group">
-                            <h3>Погода</h3>
-                            <div class="weather-grid">
-                                <button class="weather-btn" data-weather="CLEAR"><i class="fas fa-sun"></i> Ясно</button>
-                                <button class="weather-btn" data-weather="EXTRASUNNY"><i class="fas fa-sun"></i> Солнечно</button>
-                                <button class="weather-btn" data-weather="CLOUDS"><i class="fas fa-cloud"></i> Облачно</button>
-                                <button class="weather-btn" data-weather="OVERCAST"><i class="fas fa-cloud-sun"></i> Пасмурно</button>
-                                <button class="weather-btn" data-weather="RAIN"><i class="fas fa-cloud-rain"></i> Дождь</button>
-                                <button class="weather-btn" data-weather="THUNDER"><i class="fas fa-cloud-bolt"></i> Гроза</button>
-                                <button class="weather-btn" data-weather="FOG"><i class="fas fa-smog"></i> Туман</button>
-                                <button class="weather-btn" data-weather="SNOW"><i class="fas fa-snowflake"></i> Снег</button>
-                            </div>
+                    
+                    <div class="world-section">
+                        <h3>Погода</h3>
+                        <!-- ✅ ДОБАВЛЕНЫ КНОПКИ ПОГОДЫ -->
+                        <div class="weather-grid" id="weatherGrid">
+                            <button class="weather-btn" data-weather="CLEAR">☀️ Ясно</button>
+                            <button class="weather-btn" data-weather="CLOUDS">☁️ Облачно</button>
+                            <button class="weather-btn" data-weather="RAIN">🌧️ Дождь</button>
+                            <button class="weather-btn" data-weather="THUNDER">⛈️ Гроза</button>
+                            <button class="weather-btn" data-weather="FOG">🌫️ Туман</button>
+                            <button class="weather-btn" data-weather="SNOW">❄️ Снег</button>
                         </div>
+                    </div>
 
-                        <div class="control-group">
-                            <h3>Время суток</h3>
-                            <div class="time-control">
-                                <input type="range" id="timeSlider" min="0" max="23" value="12">
-                                <span id="timeDisplay">12:00</span>
-                                <button class="action-btn primary" id="setTimeBtn">Установить</button>
-                            </div>
+                    <div class="world-section">
+                        <h3>Время суток</h3>
+                        <div class="time-controls">
+                            <input type="range" id="timeSlider" min="0" max="23" value="12">
+                            <span id="timeDisplay">12:00</span>
+                            <button class="btn-primary" id="setTimeBtn">Установить</button>
                         </div>
+                    </div>
 
-                        <div class="control-group">
-                            <h3>Объявление</h3>
-                            <div class="announcement-form">
-                                <textarea id="announcementText" placeholder="Введите текст объявления..."></textarea>
-                                <button class="action-btn success" id="sendAnnouncementBtn">
-                                    <i class="fas fa-bullhorn"></i> Отправить всем
-                                </button>
-                            </div>
-                        </div>
+                    <div class="world-section">
+                        <h3>Объявления</h3>
+                        <textarea id="announcementText" placeholder="Текст объявления..." rows="4"></textarea>
+                        <button class="btn-primary" id="sendAnnouncementBtn">
+                            <i class="fas fa-bullhorn"></i> Отправить всем
+                        </button>
                     </div>
                 </div>
 
@@ -252,14 +248,84 @@
                 <div class="tab-content" id="tab-logs">
                     <div class="tab-header">
                         <h2><i class="fas fa-list"></i> Логи действий</h2>
-                        <button class="action-btn" id="refreshLogsBtn">
-                            <i class="fas fa-rotate"></i> Обновить
+                        <button class="btn-primary" id="refreshLogsBtn">
+                            <i class="fas fa-sync"></i> Обновить
                         </button>
                     </div>
-
                     <div class="logs-container" id="logsContainer">
-                        <!-- Логи генерируются JS -->
+                        <!-- Логи загружаются динамически -->
                     </div>
+                </div>
+
+                <!-- ВКЛАДКА: СПОСОБНОСТИ -->
+                <div class="tab-content" id="tab-abilities">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-magic"></i> Админ Способности</h2>
+                    </div>
+                    <div class="abilities-grid">
+                        <button class="ability-btn" onclick="toggleInvisible()">
+                            <i class="fas fa-ghost"></i>
+                            <span>Невидимость</span>
+                        </button>
+                        <button class="ability-btn" onclick="toggleGodMode()">
+                            <i class="fas fa-shield"></i>
+                            <span>Бессмертие</span>
+                        </button>
+                        <button class="ability-btn" onclick="toggleNoclip()">
+                            <i class="fas fa-plane"></i>
+                            <span>Noclip</span>
+                        </button>
+                        <button class="ability-btn" onclick="stopSpectate()">
+                            <i class="fas fa-eye-slash"></i>
+                            <span>Остановить слежку</span>
+                        </button>
+                    </div>
+                    <div class="section-divider"></div>
+                    <h3>История телепортов</h3>
+                    <button class="btn-primary" onclick="loadTeleportHistory()" style="margin: 15px 0;">
+                        <i class="fas fa-sync"></i> Загрузить историю
+                    </button>
+                    <div id="teleportHistoryList" class="history-list"></div>
+                </div>
+
+                <!-- ВКЛАДКА: БАНЫ -->
+                <div class="tab-content" id="tab-bans">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-gavel"></i> Управление банами</h2>
+                        <button class="btn-primary" onclick="loadBannedList()">
+                            <i class="fas fa-sync"></i> Обновить
+                        </button>
+                    </div>
+                    <div id="bannedPlayersList" class="bans-list"></div>
+                </div>
+
+                <!-- ВКЛАДКА: СТАТИСТИКА -->
+                <div class="tab-content" id="tab-statistics">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-chart-line"></i> Статистика</h2>
+                    </div>
+                    
+                    <h3>Онлайн за последние 7 дней</h3>
+                    <button class="btn-primary" onclick="loadOnlineStats()" style="margin: 15px 0;">
+                        <i class="fas fa-sync"></i> Загрузить
+                    </button>
+                    <div id="onlineStatsChart" class="stats-chart"></div>
+                    
+                    <div class="section-divider"></div>
+                    
+                    <h3>Топ 20 игроков по времени</h3>
+                    <button class="btn-primary" onclick="loadTopPlayers()" style="margin: 15px 0;">
+                        <i class="fas fa-sync"></i> Загрузить
+                    </button>
+                    <div id="topPlayersList" class="top-players-list"></div>
+                    
+                    <div class="section-divider"></div>
+                    
+                    <h3>Отчёты админов</h3>
+                    <button class="btn-primary" onclick="loadAdminReports()" style="margin: 15px 0;">
+                        <i class="fas fa-sync"></i> Загрузить
+                    </button>
+                    <div id="adminReportsList" class="reports-list"></div>
                 </div>
 
                 <!-- ВКЛАДКА: НАСТРОЙКИ -->
@@ -267,31 +333,28 @@
                     <div class="tab-header">
                         <h2><i class="fas fa-cog"></i> Настройки</h2>
                     </div>
-
-                    <div class="settings-groups">
-                        <div class="setting-group">
-                            <h3>Уровни доступа</h3>
-                            <div class="access-levels">
-                                <div class="level-item">
-                                    <span class="level-badge level-1">1</span>
-                                    <span>Младший модератор</span>
-                                </div>
-                                <div class="level-item">
-                                    <span class="level-badge level-2">2</span>
-                                    <span>Модератор</span>
-                                </div>
-                                <div class="level-item">
-                                    <span class="level-badge level-3">3</span>
-                                    <span>Старший модератор</span>
-                                </div>
-                                <div class="level-item">
-                                    <span class="level-badge level-4">4</span>
-                                    <span>Администратор</span>
-                                </div>
-                                <div class="level-item">
-                                    <span class="level-badge level-5">5</span>
-                                    <span>Главный администратор</span>
-                                </div>
+                    <div class="settings-section">
+                        <h3>Уровни доступа</h3>
+                        <div class="access-levels">
+                            <div class="level-item">
+                                <span class="level-badge level-1">1</span>
+                                <span class="level-name">Младший модератор</span>
+                            </div>
+                            <div class="level-item">
+                                <span class="level-badge level-2">2</span>
+                                <span class="level-name">Модератор</span>
+                            </div>
+                            <div class="level-item">
+                                <span class="level-badge level-3">3</span>
+                                <span class="level-name">Старший модератор</span>
+                            </div>
+                            <div class="level-item">
+                                <span class="level-badge level-4">4</span>
+                                <span class="level-name">Администратор</span>
+                            </div>
+                            <div class="level-item">
+                                <span class="level-badge level-5">5</span>
+                                <span class="level-name">Главный администратор</span>
                             </div>
                         </div>
                     </div>
@@ -300,43 +363,102 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: ДЕЙСТВИЯ С ИГРОКОМ -->
-    <div class="modal" id="playerModal">
-        <div class="modal-content">
+        <!-- УВЕДОМЛЕНИЯ -->
+    <div id="notifications" class="notification-container"></div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ВЫБОРА ОРУЖИЯ -->
+    <div class="modal" id="weaponModal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3 id="modalPlayerName">Игрок</h3>
-                <button class="modal-close" id="modalClose">
+                <h3><i class="fas fa-gun"></i> Выбор оружия</h3>
+                <button class="modal-close" onclick="closeWeaponModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="player-actions">
-                    <button class="action-btn" data-action="teleportTo">
-                        <i class="fas fa-location-arrow"></i> ТП к игроку
+                <h4 style="margin-bottom: 15px; color: rgba(255, 255, 255, 0.8);">Пистолеты</h4>
+                <div class="weapon-grid">
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_PISTOL', 250)">
+                        <i class="fas fa-gun"></i>
+                        <span>Пистолет</span>
                     </button>
-                    <button class="action-btn" data-action="teleportHere">
-                        <i class="fas fa-location-dot"></i> ТП ко мне
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_COMBATPISTOL', 250)">
+                        <i class="fas fa-gun"></i>
+                        <span>Боевой пистолет</span>
                     </button>
-                    <button class="action-btn" data-action="freeze">
-                        <i class="fas fa-snowflake"></i> Заморозить
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_HEAVYPISTOL', 200)">
+                        <i class="fas fa-gun"></i>
+                        <span>Тяжёлый пистолет</span>
                     </button>
-                    <button class="action-btn" data-action="heal">
-                        <i class="fas fa-heart"></i> Вылечить
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_APPISTOL', 300)">
+                        <i class="fas fa-gun"></i>
+                        <span>AP Пистолет</span>
                     </button>
-                    <button class="action-btn warning" data-action="kick">
-                        <i class="fas fa-door-open"></i> Кикнуть
+                </div>
+
+                <h4 style="margin: 20px 0 15px 0; color: rgba(255, 255, 255, 0.8);">Автоматы</h4>
+                <div class="weapon-grid">
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_MICROSMG', 500)">
+                        <i class="fas fa-gun"></i>
+                        <span>Micro SMG</span>
                     </button>
-                    <button class="action-btn danger" data-action="ban">
-                        <i class="fas fa-ban"></i> Забанить
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_SMG', 500)">
+                        <i class="fas fa-gun"></i>
+                        <span>SMG</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_ASSAULTRIFLE', 500)">
+                        <i class="fas fa-gun"></i>
+                        <span>Автомат</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_CARBINERIFLE', 500)">
+                        <i class="fas fa-gun"></i>
+                        <span>Карабин</span>
+                    </button>
+                </div>
+
+                <h4 style="margin: 20px 0 15px 0; color: rgba(255, 255, 255, 0.8);">Дробовики и снайперки</h4>
+                <div class="weapon-grid">
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_PUMPSHOTGUN', 100)">
+                        <i class="fas fa-gun"></i>
+                        <span>Помповый дробовик</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_SAWNOFFSHOTGUN', 80)">
+                        <i class="fas fa-gun"></i>
+                        <span>Обрез</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_SNIPERRIFLE', 50)">
+                        <i class="fas fa-gun"></i>
+                        <span>Снайперка</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_HEAVYSNIPER', 30)">
+                        <i class="fas fa-gun"></i>
+                        <span>Тяжёлая снайперка</span>
+                    </button>
+                </div>
+
+                <h4 style="margin: 20px 0 15px 0; color: rgba(255, 255, 255, 0.8);">Специальное</h4>
+                <div class="weapon-grid">
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_STUNGUN', 1)">
+                        <i class="fas fa-bolt"></i>
+                        <span>Электрошокер</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_NIGHTSTICK', 1)">
+                        <i class="fas fa-gavel"></i>
+                        <span>Дубинка</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_BAT', 1)">
+                        <i class="fas fa-baseball-ball"></i>
+                        <span>Бита</span>
+                    </button>
+                    <button class="weapon-choice-btn" onclick="selectWeapon('WEAPON_KNIFE', 1)">
+                        <i class="fas fa-knife"></i>
+                        <span>Нож</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- УВЕДОМЛЕНИЯ -->
-    <div class="notifications" id="notifications"></div>
-
-    <script src="script.js"></script>
+    <script src="script.js?v=9"></script>
 </body>
 </html>
