@@ -43,77 +43,35 @@ mp.events.add('server:login', async (player, login, password) => {
         console.log('='.repeat(60));
         console.log(`[Server] 🔍 Попытка входа: "${login}"`);
         
-        // Validate inputs
-        const loginValidation = security.validateLogin(login);
-        if (!loginValidation.valid) {
-            player.call('client:authResponse', ['error', loginValidation.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        const passwordValidation = security.validatePassword(password);
-        if (!passwordValidation.valid) {
-            player.call('client:authResponse', ['error', passwordValidation.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        // Check rate limiting
-        const rateLimit = security.checkRateLimit(player.ip);
-        if (!rateLimit.allowed) {
-            console.log(`[Server] ⚠️ Rate limit exceeded for IP: ${player.ip}`);
-            player.call('client:authResponse', ['error', rateLimit.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        // Check if user is banned
-        const [bans] = await db.query(
-            'SELECT * FROM bans WHERE (social_club = ? OR ip_address = ?) AND (expires_at IS NULL OR expires_at > NOW())',
-            [login, player.ip]
-        );
-        
-        if (bans.length > 0) {
-            const ban = bans[0];
-            const banMsg = ban.expires_at 
-                ? `Вы забанены до ${new Date(ban.expires_at).toLocaleString('ru-RU')}. Причина: ${ban.reason}`
-                : `Вы забанены навсегда. Причина: ${ban.reason}`;
-            
-            console.log(`[Server] ❌ Попытка входа забаненного пользователя: ${login}`);
-            player.call('client:authResponse', ['error', banMsg]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        // Ищем пользователя по логину
+        // Ищем пользователя по логину И паролю
         const [rows] = await db.query(
-            'SELECT * FROM users WHERE login = ?',
-            [login]
+            'SELECT * FROM users WHERE login = ? AND password = ?',
+            [login, password]
         );
+        
+        console.log(`[Server] Найдено записей: ${rows.length}`);
         
         if (rows.length === 0) {
-            console.log(`[Server] ❌ Логин не найден`);
-            player.call('client:authResponse', ['error', 'Неверный логин или пароль']);
+            // Проверяем существует ли логин вообще
+            const [checkLogin] = await db.query(
+                'SELECT id FROM users WHERE login = ?',
+                [login]
+            );
+            
+            if (checkLogin.length > 0) {
+                console.log(`[Server] ❌ Логин найден, но пароль неверный`);
+                player.call('client:authResponse', ['error', 'Неверный пароль']);
+            } else {
+                console.log(`[Server] ❌ Логин не найден`);
+                player.call('client:authResponse', ['error', 'Пользователь не найден']);
+            }
             console.log('='.repeat(60));
             return;
         }
         
         const user = rows[0];
         
-        // Verify password
-        const passwordMatch = await security.verifyPassword(password, user.password);
-        
-        if (!passwordMatch) {
-            console.log(`[Server] ❌ Неверный пароль`);
-            player.call('client:authResponse', ['error', 'Неверный логин или пароль']);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        console.log(`[Server] ✅ Пользователь найден: ID=${user.id}, Login=${user.login}`);
-        
-        // Reset rate limit on successful login
-        security.resetRateLimit(player.ip);
+        console.log(`[Server] ��� Пользователь найден: ID=${user.id}, Login=${user.login}`);
         
         // Обновляем последний вход и IP
         await db.query(
@@ -172,19 +130,6 @@ mp.events.add('server:register', async (player, login, password) => {
     try {
         console.log(`[Server] Попытка регистрации: ${login}`);
         
-        // Validate inputs
-        const loginValidation = security.validateLogin(login);
-        if (!loginValidation.valid) {
-            player.call('client:authResponse', ['error', loginValidation.error]);
-            return;
-        }
-        
-        const passwordValidation = security.validatePassword(password);
-        if (!passwordValidation.valid) {
-            player.call('client:authResponse', ['error', passwordValidation.error]);
-            return;
-        }
-        
         // Проверяем существование пользователя
         const [existing] = await db.query(
             'SELECT id FROM users WHERE login = ?',
@@ -197,13 +142,10 @@ mp.events.add('server:register', async (player, login, password) => {
             return;
         }
         
-        // Hash password
-        const hashedPassword = await security.hashPassword(password);
-        
         // Создаем нового пользователя
         const [result] = await db.query(
-            'INSERT INTO users (login, password, ip_address, registered_at, last_login, money, bank, level, exp, admin_level) VALUES (?, ?, ?, NOW(), NOW(), ?, ?, 1, 0, 0)',
-            [login, hashedPassword, player.ip, config.REGISTRATION.START_MONEY, config.REGISTRATION.START_BANK]
+            'INSERT INTO users (login, password, ip_address, registered_at, last_login, money, bank, level, exp, admin_level) VALUES (?, ?, ?, NOW(), NOW(), 5000, 10000, 1, 0, 0)',
+            [login, password, player.ip]
         );
         
         player.accountId = result.insertId;
@@ -253,37 +195,11 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         
         const characterData = JSON.parse(characterDataJson);
         
-        // Validate name
-        const nameValidation = security.validateCharacterName(characterData.name);
-        if (!nameValidation.valid) {
-            player.call('client:characterCreationResponse', ['error', nameValidation.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        const surnameValidation = security.validateCharacterName(characterData.surname);
-        if (!surnameValidation.valid) {
-            player.call('client:characterCreationResponse', ['error', surnameValidation.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        // Validate age
-        const ageValidation = security.validateAge(characterData.age);
-        if (!ageValidation.valid) {
-            player.call('client:characterCreationResponse', ['error', ageValidation.error]);
-            console.log('='.repeat(60));
-            return;
-        }
-        
-        // ✅ ИСПРАВЛЕНИЕ: Извлекаем gender как число
-        const gender = parseInt(characterData.gender);
-        
         console.log(`[Server] Распарсенные данные:`);
-        console.log(`  - Имя: ${nameValidation.value}`);
-        console.log(`  - Фамилия: ${surnameValidation.value}`);
-        console.log(`  - Возраст: ${ageValidation.value}`);
-        console.log(`  - Пол (число): ${gender}`);
+        console.log(`  - Имя: ${characterData.name}`);
+        console.log(`  - Фамилия: ${characterData.surname}`);
+        console.log(`  - Возраст: ${characterData.age}`);
+        console.log(`  - Пол: ${characterData.gender}`);
         
         // Проверка лимита персонажей
         const [existingChars] = await db.query(
@@ -293,9 +209,9 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         
         console.log(`[Server] Существующих персонажей: ${existingChars[0].count}`);
         
-        if (existingChars[0].count >= config.CHARACTER.MAX_PER_ACCOUNT) {
+        if (existingChars[0].count >= 3) {
             console.log(`[Server] ❌ Лимит персонажей превышен`);
-            player.call('client:characterCreationResponse', ['error', `У вас уже ${config.CHARACTER.MAX_PER_ACCOUNT} персонажа!`]);
+            player.call('client:characterCreationResponse', ['error', 'У вас уже 3 персонажа!']);
             console.log('='.repeat(60));
             return;
         }
@@ -303,7 +219,7 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         // Проверка уникальности имени
         const [nameCheck] = await db.query(
             'SELECT id FROM characters WHERE name = ? AND surname = ?',
-            [nameValidation.value, surnameValidation.value]
+            [characterData.name, characterData.surname]
         );
         
         console.log(`[Server] Проверка имени: найдено ${nameCheck.length} совпадений`);
@@ -315,26 +231,15 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
             return;
         }
         
-        const startPosition = config.CHARACTER.START_POSITION;
-        
-        // ✅ ИСПРАВЛЕНИЕ: Создаём правильный объект внешности
-        const appearance = {
-            gender: gender,
-            faceFeatures: characterData.appearance?.faceFeatures || {
-                mother: 21,
-                father: 0,
-                shapeMix: 0.5,
-                skinMix: 0.5
-            },
-            hair: characterData.appearance?.hair || 0,
-            hairColor: characterData.appearance?.hairColor || 0,
-            eyeColor: characterData.appearance?.eyeColor || 0
+        const startPosition = {
+            x: -1037.7,
+            y: -2738.5,
+            z: 20.0,
+            heading: 0
         };
         
-        const appearanceJson = JSON.stringify(appearance);
-        
         console.log(`[Server] Стартовая позиция: X=${startPosition.x}, Y=${startPosition.y}, Z=${startPosition.z}`);
-        console.log(`[Server] Внешность (исправленная): ${appearanceJson}`);
+        console.log(`[Server] Внешность: ${JSON.stringify(characterData.appearance)}`);
         
         // СОЗДАЕМ ПЕРСОНАЖА
         console.log(`[Server] 💾 Выполнение INSERT запроса...`);
@@ -345,12 +250,12 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
                 player.accountId,
-                nameValidation.value,
-                surnameValidation.value,
-                ageValidation.value,
-                gender,                          // ✅ ИСПРАВЛЕНО: Число вместо объекта
-                config.CHARACTER.START_MONEY,
-                config.CHARACTER.START_BANK,
+                characterData.name,
+                characterData.surname,
+                characterData.age,
+                characterData.gender,
+                1000,
+                5000,
                 1,
                 0,
                 100,
@@ -360,20 +265,12 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
                 startPosition.z,
                 startPosition.heading,
                 0,
-                appearanceJson                   // ✅ ИСПРАВЛЕНО: Правильный JSON
+                JSON.stringify(characterData.appearance)
             ]
         );
         
         console.log(`[Server] ✅ INSERT успешен! ID нового персонажа: ${result.insertId}`);
         console.log(`[Server] Affected rows: ${result.affectedRows}`);
-        
-        // Выдаём стартовый набор
-        if (typeof global.addItem === 'function') {
-            for (const item of config.INVENTORY.STARTER_ITEMS) {
-                await global.addItem(result.insertId, item.name, item.quantity);
-            }
-            console.log('[Server] Стартовый набор выдан новому персонажу');
-        }
         
         // ПРОВЕРЯЕМ ЧТО ПЕРСОНАЖ РЕАЛЬНО СОЗДАН
         const [checkCreated] = await db.query(
@@ -431,6 +328,17 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         console.log('='.repeat(60));
         player.call('client:characterCreationResponse', ['error', 'Ошибка при создании персонажа!']);
     }
+	
+	console.log(`[Server] ✅ INSERT успешен! ID нового персонажа: ${result.insertId}`);
+
+// ДОБАВИТЬ ЭТО:
+// Выдаём стартовый набор
+if (typeof global.addItem === 'function') {
+    await global.addItem(result.insertId, 'water', 2);
+    await global.addItem(result.insertId, 'bread', 3);
+    await global.addItem(result.insertId, 'phone', 1);
+    console.log('[Server] Стартовый набор выдан новому персонажу');
+}
 });
 
 mp.events.add('server:selectCharacter', async (player, characterId) => {

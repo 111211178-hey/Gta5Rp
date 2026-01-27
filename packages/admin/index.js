@@ -340,26 +340,48 @@ mp.events.add('admin:giveMoney', async (player, targetId, amount, type) => {
         return;
     }
     
+    // Validate type to prevent SQL injection
+    if (type !== 'cash' && type !== 'bank') {
+        console.error('[Admin System] Invalid money type:', type);
+        player.call('client:adminNotify', ['error', 'Неверный тип валюты!']);
+        return;
+    }
+    
+    // Validate amount
+    const numAmount = parseInt(amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+        player.call('client:adminNotify', ['error', 'Неверная сумма!']);
+        return;
+    }
+    
     try {
         const field = type === 'cash' ? 'money' : 'bank';
         
-        await db.query(
-            `UPDATE characters SET ${field} = ${field} + ? WHERE id = ?`,
-            [amount, target.characterId]
-        );
-        
-        if (type === 'cash') {
-            target.money = (target.money || 0) + amount;
+        // Use parameterized query properly
+        if (field === 'money') {
+            await db.query(
+                'UPDATE characters SET money = money + ? WHERE id = ?',
+                [numAmount, target.characterId]
+            );
         } else {
-            target.bank = (target.bank || 0) + amount;
+            await db.query(
+                'UPDATE characters SET bank = bank + ? WHERE id = ?',
+                [numAmount, target.characterId]
+            );
         }
         
-        player.call('client:adminNotify', ['success', `Выдано $${amount.toLocaleString()} игроку ${target.name}`]);
-        target.call('client:adminNotify', ['success', `Вам выдано $${amount.toLocaleString()}`]);
+        if (type === 'cash') {
+            target.money = (target.money || 0) + numAmount;
+        } else {
+            target.bank = (target.bank || 0) + numAmount;
+        }
         
-        await logAdminAction(player.accountId, 'GIVE_MONEY', target.socialClub, `Amount: $${amount}, Type: ${type}`);
+        player.call('client:adminNotify', ['success', `Выдано $${numAmount.toLocaleString()} игроку ${target.name}`]);
+        target.call('client:adminNotify', ['success', `Вам выдано $${numAmount.toLocaleString()}`]);
         
-        console.log(`[Admin System] ${player.socialClub} выдал $${amount} (${type}) игроку ${target.socialClub}`);
+        await logAdminAction(player.accountId, 'GIVE_MONEY', target.socialClub, `Amount: $${numAmount}, Type: ${type}`);
+        
+        console.log(`[Admin System] ${player.socialClub} выдал $${numAmount} (${type}) игроку ${target.socialClub}`);
         
     } catch (err) {
         console.error('[Admin System] Ошибка выдачи денег:', err);
@@ -380,26 +402,48 @@ mp.events.add('admin:takeMoney', async (player, targetId, amount, type) => {
         return;
     }
     
+    // Validate type to prevent SQL injection
+    if (type !== 'cash' && type !== 'bank') {
+        console.error('[Admin System] Invalid money type:', type);
+        player.call('client:adminNotify', ['error', 'Неверный тип валюты!']);
+        return;
+    }
+    
+    // Validate amount
+    const numAmount = parseInt(amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+        player.call('client:adminNotify', ['error', 'Неверная сумма!']);
+        return;
+    }
+    
     try {
         const field = type === 'cash' ? 'money' : 'bank';
         
-        await db.query(
-            `UPDATE characters SET ${field} = GREATEST(0, ${field} - ?) WHERE id = ?`,
-            [amount, target.characterId]
-        );
-        
-        if (type === 'cash') {
-            target.money = Math.max(0, (target.money || 0) - amount);
+        // Use parameterized query properly
+        if (field === 'money') {
+            await db.query(
+                'UPDATE characters SET money = GREATEST(0, money - ?) WHERE id = ?',
+                [numAmount, target.characterId]
+            );
         } else {
-            target.bank = Math.max(0, (target.bank || 0) - amount);
+            await db.query(
+                'UPDATE characters SET bank = GREATEST(0, bank - ?) WHERE id = ?',
+                [numAmount, target.characterId]
+            );
         }
         
-        player.call('client:adminNotify', ['success', `Снято $${amount.toLocaleString()} у игрока ${target.name}`]);
-        target.call('client:adminNotify', ['warning', `У вас снято $${amount.toLocaleString()}`]);
+        if (type === 'cash') {
+            target.money = Math.max(0, (target.money || 0) - numAmount);
+        } else {
+            target.bank = Math.max(0, (target.bank || 0) - numAmount);
+        }
         
-        await logAdminAction(player.accountId, 'TAKE_MONEY', target.socialClub, `Amount: $${amount}, Type: ${type}`);
+        player.call('client:adminNotify', ['success', `Снято $${numAmount.toLocaleString()} у игрока ${target.name}`]);
+        target.call('client:adminNotify', ['warning', `У вас снято $${numAmount.toLocaleString()}`]);
         
-        console.log(`[Admin System] ${player.socialClub} снял $${amount} (${type}) у игрока ${target.socialClub}`);
+        await logAdminAction(player.accountId, 'TAKE_MONEY', target.socialClub, `Amount: $${numAmount}, Type: ${type}`);
+        
+        console.log(`[Admin System] ${player.socialClub} снял $${numAmount} (${type}) у игрока ${target.socialClub}`);
         
     } catch (err) {
         console.error('[Admin System] Ошибка снятия денег:', err);
