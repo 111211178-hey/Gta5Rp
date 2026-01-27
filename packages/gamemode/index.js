@@ -1,39 +1,37 @@
-const mysql = require('mysql2/promise');
-
-// Подключение к базе данных
-const db = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'Avatar98_98',
-    database: 'gtas_rp',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
-
-console.log('[Server] Попытка подключения к базе данных gtas_rp...');
-
-// Проверяем подключение
-db.getConnection()
-    .then(connection => {
-        console.log('[Server] ✅ База данных gtas_rp подключена успешно!');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('[Server] ❌ Ошибка подключения к базе данных:', err.message);
-    });
+const { db } = require('../database');
 
 // Счетчик измерений для создания персонажей
 let nextCreationDimension = 1000;
 
 // При подключении игрока
-mp.events.add('playerJoin', (player) => {
+mp.events.add('playerJoin', async (player) => {
     console.log(`[Server] Игрок ${player.socialClub} подключился к серверу`);
     
     player.dimension = 0;
     player.accountId = null;
     player.characterId = null;
     player.creationDimension = null;
+    
+    // Загружаем админ уровень
+    try {
+        const [adminResult] = await db.query(
+            'SELECT admin_level FROM users WHERE login = ?',
+            [player.socialClub]
+        );
+        
+        if (adminResult.length > 0) {
+            player.adminLevel = adminResult[0].admin_level || 0;
+            
+            if (player.adminLevel > 0) {
+                player.outputChatBox(`!{#4caf50}[Система] Вы авторизованы как администратор уровня ${player.adminLevel}`);
+                player.outputChatBox(`!{#2196f3}[Подсказка] Используйте /admin для открытия админ панели`);
+                
+                console.log(`[Server] ${player.socialClub} вошел с админ уровнем ${player.adminLevel}`);
+            }
+        }
+    } catch (err) {
+        console.error('[Server] Ошибка загрузки админ уровня:', err);
+    }
 });
 
 // === АВТОРИЗАЦИЯ ===
@@ -71,7 +69,7 @@ mp.events.add('server:login', async (player, login, password) => {
         
         const user = rows[0];
         
-        console.log(`[Server] ✅ Пользователь найден: ID=${user.id}, Login=${user.login}`);
+        console.log(`[Server] ��� Пользователь найден: ID=${user.id}, Login=${user.login}`);
         
         // Обновляем последний вход и IP
         await db.query(
@@ -81,13 +79,19 @@ mp.events.add('server:login', async (player, login, password) => {
         
         player.accountId = user.id;
         player.socialClub = login;
+        player.adminLevel = user.admin_level || 0;
         
         console.log(`[Server] ✅ Игрок ${login} успешно авторизован (ID: ${user.id})`);
+        
+        if (player.adminLevel > 0) {
+            console.log(`[Server] Админ уровень: ${player.adminLevel}`);
+        }
+        
         console.log('='.repeat(60));
         
         player.call('client:authResponse', ['success', 'Вход выполнен!']);
         
-        // Загружаем персонажей (ИСПРАВЛЕНО: добавлены level и last_active)
+        // Загружаем персонажей
         setTimeout(async () => {
             console.log(`[Server] 📋 Загрузка персонажей для user_id=${user.id}...`);
             
@@ -138,12 +142,13 @@ mp.events.add('server:register', async (player, login, password) => {
         
         // Создаем нового пользователя
         const [result] = await db.query(
-            'INSERT INTO users (login, password, ip_address, registered_at, last_login, money, bank, level, exp) VALUES (?, ?, ?, NOW(), NOW(), 5000, 10000, 1, 0)',
+            'INSERT INTO users (login, password, ip_address, registered_at, last_login, money, bank, level, exp, admin_level) VALUES (?, ?, ?, NOW(), NOW(), 5000, 10000, 1, 0, 0)',
             [login, password, player.ip]
         );
         
         player.accountId = result.insertId;
         player.socialClub = login;
+        player.adminLevel = 0;
         
         console.log(`[Server] ✅ Игрок ${login} успешно зарегистрирован (ID: ${result.insertId})`);
         
@@ -164,7 +169,7 @@ mp.events.add('server:register', async (player, login, password) => {
 
 mp.events.add('server:enterCharacterCreation', (player) => {
     try {
-        console.log(`[Server] Игрок ${player.socialClub} входит в режи�� создания персонажа`);
+        console.log(`[Server] Игрок ${player.socialClub} входит в режим создания персонажа`);
         
         player.creationDimension = nextCreationDimension++;
         player.dimension = player.creationDimension;
@@ -284,7 +289,7 @@ mp.events.add('server:createCharacter', async (player, characterDataJson) => {
         player.dimension = 0;
         console.log(`[Server] Игрок возвращен в dimension 0`);
         
-        // ЗАГРУЖАЕМ СПИСОК ПЕРСОНАЖЕЙ (ИСПРАВЛЕНО: добавлены level и last_active)
+        // ЗАГРУЖАЕМ СПИСОК ПЕРСОНАЖЕЙ
         setTimeout(async () => {
             console.log(`[Server] 📋 Загрузка списка персонажей для user_id=${player.accountId}...`);
             
@@ -344,6 +349,8 @@ mp.events.add('server:selectCharacter', async (player, characterId) => {
         
         player.characterId = character.id;
         player.name = `${character.name}_${character.surname}`;
+        player.money = character.money;
+        player.bank = character.bank;
         
         player.dimension = 0;
         console.log(`[Server] Игрок ${player.socialClub} возвращен в основное измерение (0)`);
@@ -392,7 +399,7 @@ mp.events.add('server:deleteCharacter', async (player, characterId) => {
             console.log(`[Server] ✅ Персонаж ID: ${characterId} успешно удален`);
             player.call('client:characterDeletionResponse', ['success', 'Персонаж удален!']);
             
-            // ОБНОВЛЯЕМ СПИСОК (ИСПРАВЛЕНО: добавлены level и last_active)
+            // ОБНОВЛЯЕМ СПИСОК
             setTimeout(async () => {
                 const [characters] = await db.query(
                     'SELECT id, name, surname, age, gender, money, bank, level, last_active FROM characters WHERE user_id = ?',

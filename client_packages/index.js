@@ -857,3 +857,243 @@ mp.events.add('playerCommand', (command) => {
         mp.gui.chat.push(`!{#FFFF00}Camera Rotation: ${cameraRotation}`);
     }
 });
+
+// ===== АДМИН СИСТЕМА =====
+
+let adminBrowser = null;
+let isAdminPanelOpen = false;
+let isAdminSystemActive = false;
+let adminLevel = 0;
+
+mp.gui.chat.push('!{#4caf50}[Admin] Модуль загружен');
+
+// ===== АКТИВАЦИЯ СИСТЕМЫ =====
+mp.events.add('client:activateAdminSystem', (level) => {
+    isAdminSystemActive = true;
+    adminLevel = level;
+    
+    mp.gui.chat.push(`!{#4caf50}[Админ] ✅ Система активирована! Уровень: ${level}`);
+    mp.gui.chat.push(`!{#2196f3}[Админ] Нажмите F3 для открытия панели`);
+    mp.game.graphics.notify(`~g~Админ система активирована!~n~~w~Нажмите ~b~F3~w~ для открытия`);
+});
+
+// ===== ОТКРЫТИЕ/ЗАКРЫТИЕ ПО F3 =====
+mp.keys.bind(0x72, true, () => { // F3
+    if (!isAdminSystemActive) {
+        mp.gui.chat.push('!{#ff9800}[Админ] Система не активирована! Используйте /admin');
+        return;
+    }
+    
+    if (isAdminPanelOpen) {
+        closeAdminPanel();
+    } else {
+        mp.events.callRemote('admin:requestOpenPanel');
+    }
+});
+
+// ===== ОТКРЫТИЕ АДМИН ПАНЕЛИ =====
+mp.events.add('client:openAdminPanel', (level) => {
+    if (isAdminPanelOpen) {
+        mp.gui.chat.push('!{#ff9800}[Админ] Панель уже открыта!');
+        return;
+    }
+    
+    mp.gui.chat.push(`!{#ffff00}[Админ] Открытие панели...`);
+    
+    try {
+        // Создаём браузер
+        adminBrowser = mp.browsers.new('package://cef/adminpanel/index.html');
+        
+        mp.gui.chat.push('!{#00ff00}[Админ] ✅ Браузер создан!');
+        
+        setTimeout(() => {
+            // Показываем курсор
+            mp.gui.cursor.visible = true;
+            
+            if (typeof mp.gui.cursor.show === 'function') {
+                mp.gui.cursor.show(true, true);
+            }
+            
+            // Отключаем управление
+            mp.game.ui.displayRadar(false);
+            
+            // Отправляем данные админа
+            const adminData = {
+                name: mp.players.local.name || 'Admin',
+                level: level
+            };
+            
+            if (adminBrowser) {
+                adminBrowser.execute(`updateAdminInfo(${JSON.stringify(adminData)})`);
+            }
+            
+            // Запрашиваем данные
+            mp.events.callRemote('admin:getPlayers');
+            mp.events.callRemote('admin:getEconomyStats');
+            
+            mp.gui.chat.push('!{#00ff00}[Админ] ✅ Панель открыта! (F3 или ESC для закрытия)');
+            mp.game.graphics.notify('~g~Админ панель открыта!~n~~w~F3 или ESC для закрытия');
+            
+        }, 500);
+        
+        isAdminPanelOpen = true;
+        
+    } catch (err) {
+        mp.gui.chat.push(`!{#ff0000}[Админ] ❌ ОШИБКА: ${err.message}`);
+        mp.game.graphics.notify(`~r~Ошибка: ${err.message}`);
+    }
+});
+
+// ===== ЗАКРЫТИЕ ПАНЕЛИ =====
+function closeAdminPanel() {
+    if (!isAdminPanelOpen) return;
+    
+    mp.gui.chat.push('!{#ffff00}[Админ] Закрытие панели...');
+    
+    if (adminBrowser) {
+        adminBrowser.destroy();
+        adminBrowser = null;
+    }
+    
+    mp.gui.cursor.visible = false;
+    
+    if (typeof mp.gui.cursor.show === 'function') {
+        mp.gui.cursor.show(false, false);
+    }
+    
+    // Включаем управление обратно
+    mp.game.ui.displayRadar(true);
+    
+    isAdminPanelOpen = false;
+    
+    mp.gui.chat.push('!{#00ff00}[Админ] ✅ Панель закрыта!');
+    mp.game.graphics.notify('~g~Панель закрыта');
+}
+
+mp.events.add('cef:closeAdminPanel', () => {
+    closeAdminPanel();
+});
+
+// Закрытие по ESC
+mp.keys.bind(0x1B, true, () => { // ESC
+    if (isAdminPanelOpen) {
+        closeAdminPanel();
+    }
+});
+
+// ===== ПОЛУЧЕНИЕ СПИСКА ИГРОКОВ =====
+mp.events.add('client:receivePlayersList', (playersJson) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    
+    adminBrowser.execute(`loadPlayers(${playersJson})`);
+});
+
+// ===== ДЕЙСТВИЯ С ИГРОКАМИ =====
+mp.events.add('cef:adminAction', (action, playerId) => {
+    mp.events.callRemote('admin:playerAction', action, playerId);
+});
+
+// ===== СПАВН ТРАНСПОРТА =====
+mp.events.add('cef:spawnVehicle', (model) => {
+    mp.events.callRemote('admin:spawnVehicle', model);
+});
+
+// ===== ТЕЛЕПОРТАЦИЯ =====
+mp.events.add('cef:teleport', (x, y, z) => {
+    mp.events.callRemote('admin:teleport', x, y, z);
+});
+
+// ===== ПОГОДА =====
+mp.events.add('cef:setWeather', (weather) => {
+    mp.events.callRemote('admin:setWeather', weather);
+});
+
+// ===== ВРЕМЯ =====
+mp.events.add('cef:setTime', (hour, minute) => {
+    mp.events.callRemote('admin:setTime', hour, minute);
+});
+
+// ===== ДЕНЬГИ =====
+mp.events.add('cef:giveMoney', (playerId, amount, type) => {
+    mp.events.callRemote('admin:giveMoney', playerId, amount, type);
+});
+
+mp.events.add('cef:takeMoney', (playerId, amount, type) => {
+    mp.events.callRemote('admin:takeMoney', playerId, amount, type);
+});
+
+// ===== ОБЪЯВЛЕНИЕ =====
+mp.events.add('cef:sendAnnouncement', (text) => {
+    mp.events.callRemote('admin:sendAnnouncement', text);
+});
+
+// ===== СТАТИСТИКА ЭКОНОМИКИ =====
+mp.events.add('client:receiveEconomyStats', (statsJson) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    
+    adminBrowser.execute(`updateEconomyStats(${statsJson})`);
+});
+
+// ===== ЛОГИ =====
+mp.events.add('cef:loadLogs', () => {
+    mp.events.callRemote('admin:getLogs');
+});
+
+mp.events.add('client:receiveLogs', (logsJson) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    
+    adminBrowser.execute(`displayLogs(${logsJson})`);
+});
+
+// ===== УВЕДОМЛЕНИЯ =====
+mp.events.add('client:adminNotify', (type, message) => {
+    if (isAdminPanelOpen && adminBrowser) {
+        adminBrowser.execute(`showNotification('${type}', '${message}')`);
+    }
+    
+    const colors = {
+        'success': '#4caf50',
+        'error': '#f44336',
+        'warning': '#ff9800',
+        'info': '#2196f3'
+    };
+    
+    const color = colors[type] || '#ffffff';
+    mp.gui.chat.push(`!{${color}}[Admin] ${message}`);
+});
+
+// ===== ЗАМОРОЗКА ИГРОКА =====
+mp.events.add('client:freezePlayer', (freeze) => {
+    mp.players.local.freezePosition(freeze);
+    
+    if (freeze) {
+        mp.game.ui.displayRadar(false);
+        mp.gui.chat.push('!{#ff9800}[Система] Вы заморожены администратором!');
+        mp.game.graphics.notify('~r~Вы заморожены!');
+    } else {
+        mp.game.ui.displayRadar(true);
+        mp.gui.chat.push('!{#4caf50}[Система] Вы разморожены!');
+        mp.game.graphics.notify('~g~Разморожены!');
+    }
+});
+
+// ===== ДИАЛОГ БАНА =====
+mp.events.add('client:openBanDialog', (targetId, targetName) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    
+    adminBrowser.execute(`openBanDialog(${targetId}, '${targetName}')`);
+});
+
+mp.events.add('cef:banPlayer', (targetId, reason, duration) => {
+    mp.events.callRemote('admin:banPlayer', targetId, reason, duration);
+});
+
+// ===== АВТООБНОВЛЕНИЕ СПИСКА ИГРОКОВ =====
+setInterval(() => {
+    if (isAdminPanelOpen) {
+        mp.events.callRemote('admin:getPlayers');
+    }
+}, 5000);
+
+mp.gui.chat.push('!{#4caf50}[Admin] ✅ Система загружена');
+console.log('[Admin Client] Система администрирования загружена');
