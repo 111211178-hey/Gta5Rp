@@ -448,6 +448,8 @@ mp.events.add('server:selectCharacter', async (player, characterId) => {
         player.name = `${character.name}_${character.surname}`;
         player.money = character.money;
         player.bank = character.bank;
+		
+		mp.events.call('character:loaded', player, character.id);
         
         player.dimension = 0;
         console.log(`[Server] Игрок ${player.socialClub} возвращен в основное измерение (0)`);

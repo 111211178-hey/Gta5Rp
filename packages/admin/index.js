@@ -1087,3 +1087,180 @@ mp.events.add('cef:adminAction', async (admin, action, playerId, ...args) => {
         admin.call('client:adminNotify', ['error', 'Ошибка выполнения действия']);
     }
 });
+
+// ===== СИСТЕМА СПАВНА ПРЕДМЕТОВ =====
+const itemsDb = require('../items');
+
+// Получение категорий предметов
+mp.events.add('admin:getItemCategories', (player) => {
+    if (!player.adminLevel || player.adminLevel < 1) return;
+    
+    const categories = itemsDb.getAllCategories();
+    player.call('client:receiveItemCategories', [JSON.stringify(categories)]);
+});
+
+// Получение предметов категории
+mp.events.add('admin:getCategoryItems', (player, categoryId) => {
+    if (!player.adminLevel || player.adminLevel < 1) return;
+    
+    const items = itemsDb.getCategoryItems(categoryId);
+    player.call('client:receiveCategoryItems', [JSON.stringify(items), categoryId]);
+});
+
+// Поиск предметов
+mp.events.add('admin:searchItems', (player, query) => {
+    if (!player.adminLevel || player.adminLevel < 1) return;
+    
+    const results = itemsDb.searchItems(query);
+    player.call('client:receiveSearchResults', [JSON.stringify(results)]);
+});
+
+// Спавн предмета
+// Спавн предмета
+mp.events.add('admin:spawnItem', async (player, itemId, quantity, targetId, categoryId) => {
+    if (!player.adminLevel || player.adminLevel < 2) {
+        player.call('client:adminNotify', ['error', 'Недостаточно прав!']);
+        return;
+    }
+    
+    try {
+        quantity = parseInt(quantity) || 1;
+        targetId = targetId ? parseInt(targetId) : null;
+        
+        // Находим предмет в базе
+        const itemData = itemsDb.findItemById(itemId);
+        if (!itemData) {
+            player.call('client:adminNotify', ['error', 'Предмет не найден!']);
+            return;
+        }
+        
+        // Определяем категорию предмета
+        const category = findItemCategory(itemId);
+        
+        // Определяем цель
+        let targetPlayer = player;
+        if (targetId !== null) {
+            targetPlayer = mp.players.at(targetId);
+            if (!targetPlayer || !targetPlayer.characterId) {
+                player.call('client:adminNotify', ['error', 'Игрок не найден!']);
+                return;
+            }
+        }
+        
+        if (!targetPlayer.characterId) {
+            player.call('client:adminNotify', ['error', 'Выберите персонажа!']);
+            return;
+        }
+        
+        // Проверяем/создаём предмет в БД
+        await ensureItemInDatabase(itemData, category);
+        
+        // Выдаём предмет
+        const success = await global.addItem(targetPlayer.characterId, itemData.id, quantity);
+        
+        if (success) {
+            const targetName = targetId !== null ? targetPlayer.name : 'себе';
+            player.call('client:adminNotify', ['success', `Выдано: ${itemData.name} x${quantity} → ${targetName}`]);
+            
+            if (targetId !== null && targetPlayer !== player) {
+                targetPlayer.outputChatBox(`!{#4caf50}[Админ] Вам выдан предмет: ${itemData.name} x${quantity}`);
+            }
+            
+            console.log(`[Admin] ${player.name} выдал ${itemData.name} x${quantity} игроку ${targetPlayer.name}`);
+        } else {
+            player.call('client:adminNotify', ['error', 'Ошибка выдачи! Инвентарь полон?']);
+        }
+        
+    } catch (err) {
+        console.error('[Admin] Ошибка спавна предмета:', err);
+        player.call('client:adminNotify', ['error', 'Ошибка сервера!']);
+    }
+});
+
+// Функция поиска категории предмета
+function findItemCategory(itemId) {
+    const { ITEMS_DATABASE } = require('../items');
+    
+    for (const [catId, category] of Object.entries(ITEMS_DATABASE)) {
+        const found = category.items.find(i => i.id === itemId);
+        if (found) return catId;
+    }
+    return 'misc';
+}
+
+// Функция добавления предмета в БД если его нет
+async function ensureItemInDatabase(itemData, categoryId) {
+    const { db } = require('../database');
+    
+    try {
+        // Проверяем есть ли предмет
+        const [existing] = await db.query('SELECT id FROM items WHERE name = ?', [itemData.id]);
+        
+        if (existing.length === 0) {
+            // Определяем тип предмета по категории
+            const typeMap = {
+                'food': 'consumable',
+                'drinks': 'consumable',
+                'medical': 'medical',
+                'weapons': 'weapon',
+                'ammo': 'ammo',
+                'tools': 'tool',
+                'resources': 'resource',
+                'valuables': 'misc',
+                'clothing': 'clothing',
+                'backpacks': 'backpack',
+                'keys': 'key',
+                'documents': 'document',
+                'electronics': 'tool'
+            };
+            
+            let itemType = typeMap[categoryId] || 'misc';
+            
+            // Дополнительная проверка по свойствам
+            if (itemData.weaponHash) itemType = 'weapon';
+            if (itemData.slot) itemType = 'clothing';
+            if (itemData.extraSlots) itemType = 'backpack';
+            
+            // Создаём model_data для оружия/одежды
+            let modelData = null;
+            if (itemData.weaponHash) {
+                modelData = JSON.stringify({
+                    weaponHash: itemData.weaponHash,
+                    ammo: itemData.ammo || 100
+                });
+            } else if (itemData.slot) {
+                modelData = JSON.stringify({
+                    slotType: itemData.slot,
+                    drawable: itemData.drawable || 0,
+                    texture: itemData.texture || 0,
+                    isProp: itemData.isProp || false
+                });
+            }
+            
+            // Размер предмета
+            const sizeWidth = itemData.size ? itemData.size[0] : 1;
+            const sizeHeight = itemData.size ? itemData.size[1] : 1;
+            
+            // Вставляем в БД
+            await db.query(`
+                INSERT INTO items (name, display_name, description, type, weight, max_stack, usable, model_data, size_width, size_height)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                itemData.id,
+                itemData.name,
+                itemData.description || '',
+                itemType,
+                itemData.weight || 0.1,
+                itemData.maxStack || 1,
+                itemType === 'consumable' || itemType === 'medical' ? 1 : 0,
+                modelData,
+                sizeWidth,
+                sizeHeight
+            ]);
+            
+            console.log(`[Items] ✅ Создан предмет: ${itemData.id} (${itemType})`);
+        }
+    } catch (err) {
+        console.error('[Items] Ошибка создания предмета:', err.message);
+    }
+}

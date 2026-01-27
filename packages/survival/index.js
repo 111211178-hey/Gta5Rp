@@ -4,26 +4,20 @@ const { db } = require('../database');
 
 // ===== НАСТРОЙКИ =====
 const SURVIVAL_CONFIG = {
-    // Интервал уменьшения (в миллисекундах)
-    decreaseInterval: 60000, // 1 минута
-    
-    // Сколько отнимается за интервал
+    decreaseInterval: 60000,
     hungerDecrease: 1,
     thirstDecrease: 1.5,
-    
-    // Урон при критических значениях
-    starvingDamage: 5,      // Урон при голоде = 0
-    dehydrationDamage: 7,   // Урон при жажде = 0
-    
-    // Пороги для эффект��в
-    lowThreshold: 25,       // Ниже этого - предупреждение
-    criticalThreshold: 10,  // Ниже этого - критическое состояние
-    
-    // Восстановление HP при сытости
-    regenThreshold: 80,     // Выше этого - регенерация HP
-    regenAmount: 1,         // Сколько HP восстанавливается
-    regenInterval: 10000    // Интервал регенерации (10 сек)
+    starvingDamage: 5,
+    dehydrationDamage: 7,
+    lowThreshold: 25,
+    criticalThreshold: 10,
+    regenThreshold: 80,
+    regenAmount: 1,
+    regenInterval: 10000
 };
+
+// Флаги для предупреждений
+const playerWarnings = new Map();
 
 // ===== ИНИЦИАЛИЗАЦИЯ ИГРОКА =====
 mp.events.add('playerReady', (player) => {
@@ -50,7 +44,7 @@ mp.events.add('character:loaded', async (player, characterId) => {
             player.thirst = 100;
         }
         
-        // Отправляем данные клиенту
+        playerWarnings.set(player.id, { hunger: false, thirst: false, hungerLow: false, thirstLow: false });
         updateClientStats(player);
         
         console.log(`[Survival] Загружено для ${player.name}: Голод=${player.hunger}, Жажда=${player.thirst}`);
@@ -68,7 +62,7 @@ async function savePlayerSurvival(player) {
     try {
         await db.query(
             'UPDATE characters SET hunger = ?, thirst = ? WHERE id = ?',
-            [Math.round(player.hunger), Math.round(player.thirst), player.characterId]
+            [Math.round(player.hunger || 0), Math.round(player.thirst || 0), player.characterId]
         );
     } catch (err) {
         console.error('[Survival] Ошибка сохранения:', err);
@@ -77,50 +71,89 @@ async function savePlayerSurvival(player) {
 
 // ===== ОТПРАВКА СТАТОВ КЛИЕНТУ =====
 function updateClientStats(player) {
+    if (!player || !mp.players.exists(player)) return;
+    
     player.call('client:updateSurvivalStats', [
         Math.round(player.hunger || 100),
         Math.round(player.thirst || 100),
-        player.health
+        player.health || 100
     ]);
 }
+
+// ===== ЗАПРОС СТАТОВ =====
+mp.events.add('survival:requestStats', (player) => {
+    if (player.characterId) {
+        updateClientStats(player);
+    }
+});
 
 // ===== ГЛАВНЫЙ ЦИКЛ ВЫЖИВАНИЯ =====
 setInterval(() => {
     mp.players.forEach(player => {
         if (!player.characterId) return;
-        if (player.health <= 0) return; // Мёртвые не голодают
+        if (!mp.players.exists(player)) return;
+        if (player.health <= 0) return;
         
-        // Уменьшаем голод и жажду
+        if (!playerWarnings.has(player.id)) {
+            playerWarnings.set(player.id, { hunger: false, thirst: false, hungerLow: false, thirstLow: false });
+        }
+        const warnings = playerWarnings.get(player.id);
+        
         player.hunger = Math.max(0, (player.hunger || 100) - SURVIVAL_CONFIG.hungerDecrease);
         player.thirst = Math.max(0, (player.thirst || 100) - SURVIVAL_CONFIG.thirstDecrease);
         
-        // Проверяем критические состояния
         let damage = 0;
         
+        // Голод
         if (player.hunger <= 0) {
             damage += SURVIVAL_CONFIG.starvingDamage;
-            player.outputChatBox('!{#f44336}Вы умираете от голода!');
+            if (!warnings.hunger) {
+                player.outputChatBox('!{#f44336}⚠ Вы умираете от голода!');
+                warnings.hunger = true;
+            }
         } else if (player.hunger <= SURVIVAL_CONFIG.criticalThreshold) {
-            player.outputChatBox('!{#ff9800}Вы сильно голодны! Срочно найдите еду!');
+            if (!warnings.hunger) {
+                player.outputChatBox('!{#ff5722}⚠ Вы сильно голодны! Срочно найдите еду!');
+                warnings.hunger = true;
+            }
         } else if (player.hunger <= SURVIVAL_CONFIG.lowThreshold) {
-            player.outputChatBox('!{#ffeb3b}Вы проголодались');
+            if (!warnings.hungerLow) {
+                player.outputChatBox('!{#ff9800}🍔 Вы проголодались');
+                warnings.hungerLow = true;
+            }
+            warnings.hunger = false;
+        } else {
+            warnings.hunger = false;
+            warnings.hungerLow = false;
         }
         
+        // Жажда
         if (player.thirst <= 0) {
             damage += SURVIVAL_CONFIG.dehydrationDamage;
-            player.outputChatBox('!{#f44336}Вы умираете от жажды!');
+            if (!warnings.thirst) {
+                player.outputChatBox('!{#f44336}⚠ Вы умираете от жажды!');
+                warnings.thirst = true;
+            }
         } else if (player.thirst <= SURVIVAL_CONFIG.criticalThreshold) {
-            player.outputChatBox('!{#ff9800}Вы сильно хотите пить! Срочно найдите воду!');
+            if (!warnings.thirst) {
+                player.outputChatBox('!{#ff5722}⚠ Вы сильно хотите пить! Срочно найдите воду!');
+                warnings.thirst = true;
+            }
         } else if (player.thirst <= SURVIVAL_CONFIG.lowThreshold) {
-            player.outputChatBox('!{#ffeb3b}Вы хотите пить');
+            if (!warnings.thirstLow) {
+                player.outputChatBox('!{#03a9f4}💧 Вы хотите пить');
+                warnings.thirstLow = true;
+            }
+            warnings.thirst = false;
+        } else {
+            warnings.thirst = false;
+            warnings.thirstLow = false;
         }
         
-        // Наносим урон если голод или жажда на нуле
         if (damage > 0) {
             player.health = Math.max(1, player.health - damage);
         }
         
-        // Отправляем обновление клиенту
         updateClientStats(player);
     });
 }, SURVIVAL_CONFIG.decreaseInterval);
@@ -129,57 +162,73 @@ setInterval(() => {
 setInterval(() => {
     mp.players.forEach(player => {
         if (!player.characterId) return;
-        if (player.health <= 0) return;
-        if (player.health >= 100) return;
+        if (!mp.players.exists(player)) return;
+        if (player.health <= 0 || player.health >= 100) return;
         
-        // Регенерация только если сыт и напоен
-        if (player.hunger >= SURVIVAL_CONFIG.regenThreshold && 
-            player.thirst >= SURVIVAL_CONFIG.regenThreshold) {
+        if ((player.hunger || 0) >= SURVIVAL_CONFIG.regenThreshold && 
+            (player.thirst || 0) >= SURVIVAL_CONFIG.regenThreshold) {
             player.health = Math.min(100, player.health + SURVIVAL_CONFIG.regenAmount);
             updateClientStats(player);
         }
     });
 }, SURVIVAL_CONFIG.regenInterval);
 
-// ===== СОХРАНЕНИЕ ПРИ ВЫХОДЕ =====
+// ===== СОХРАНЕНИЕ =====
 mp.events.add('playerQuit', (player) => {
     savePlayerSurvival(player);
+    playerWarnings.delete(player.id);
 });
 
-// ===== ПЕРИОДИЧЕСКОЕ СОХРАНЕНИЕ =====
 setInterval(() => {
     mp.players.forEach(player => {
-        if (player.characterId) {
+        if (player.characterId && mp.players.exists(player)) {
             savePlayerSurvival(player);
         }
     });
-}, 5 * 60 * 1000); // Каждые 5 минут
+}, 5 * 60 * 1000);
 
-// ===== ФУНКЦИИ ДЛЯ ИСПОЛЬЗОВАНИЯ ПРЕДМЕТОВ =====
+// ===== ФУНКЦИИ ДЛЯ ПРЕДМЕТОВ =====
 function restoreHunger(player, amount) {
+    if (!player || !mp.players.exists(player)) return;
     player.hunger = Math.min(100, (player.hunger || 0) + amount);
+    
+    if (playerWarnings.has(player.id)) {
+        const w = playerWarnings.get(player.id);
+        w.hunger = false;
+        w.hungerLow = false;
+    }
+    
     updateClientStats(player);
     savePlayerSurvival(player);
 }
 
 function restoreThirst(player, amount) {
+    if (!player || !mp.players.exists(player)) return;
     player.thirst = Math.min(100, (player.thirst || 0) + amount);
+    
+    if (playerWarnings.has(player.id)) {
+        const w = playerWarnings.get(player.id);
+        w.thirst = false;
+        w.thirstLow = false;
+    }
+    
     updateClientStats(player);
     savePlayerSurvival(player);
 }
 
 function restoreHealth(player, amount) {
+    if (!player || !mp.players.exists(player)) return;
     player.health = Math.min(100, player.health + amount);
     updateClientStats(player);
 }
 
-// ===== ЭКСПОРТ ФУНКЦИЙ =====
+// ===== ЭКСПОРТ =====
 global.restoreHunger = restoreHunger;
 global.restoreThirst = restoreThirst;
 global.restoreHealth = restoreHealth;
 global.updateClientStats = updateClientStats;
 
-// ===== КОМАНДЫ ДЛЯ ТЕСТИРОВАНИЯ =====
+// ===== КОМАНДЫ =====
 mp.events.addCommand('sethunger', (player, _, value) => {
     const hunger = parseInt(value);
     if (isNaN(hunger) || hunger < 0 || hunger > 100) {
@@ -187,6 +236,11 @@ mp.events.addCommand('sethunger', (player, _, value) => {
         return;
     }
     player.hunger = hunger;
+    if (playerWarnings.has(player.id)) {
+        const w = playerWarnings.get(player.id);
+        w.hunger = false;
+        w.hungerLow = false;
+    }
     updateClientStats(player);
     player.outputChatBox(`!{#4caf50}Голод установлен: ${hunger}`);
 });
@@ -198,23 +252,28 @@ mp.events.addCommand('setthirst', (player, _, value) => {
         return;
     }
     player.thirst = thirst;
+    if (playerWarnings.has(player.id)) {
+        const w = playerWarnings.get(player.id);
+        w.thirst = false;
+        w.thirstLow = false;
+    }
     updateClientStats(player);
     player.outputChatBox(`!{#4caf50}Жажда установлена: ${thirst}`);
 });
 
 mp.events.addCommand('stats', (player) => {
-    player.outputChatBox(`!{#2196f3}===== СТАТИСТИКА =====`);
-    player.outputChatBox(`!{#4caf50}HP: ${player.health}`);
-    player.outputChatBox(`!{#ff9800}Голод: ${Math.round(player.hunger || 0)}`);
-    player.outputChatBox(`!{#03a9f4}Жажда: ${Math.round(player.thirst || 0)}`);
+    player.outputChatBox(`!{#2196f3}═══════ СТАТИСТИКА ═══════`);
+    player.outputChatBox(`!{#e57373}❤ HP: ${player.health}`);
+    player.outputChatBox(`!{#ffb74d}🍔 Голод: ${Math.round(player.hunger || 0)}`);
+    player.outputChatBox(`!{#4fc3f7}💧 Жажда: ${Math.round(player.thirst || 0)}`);
 });
 
-// В packages/survival/index.js добавь:
-
-mp.events.add('survival:requestStats', (player) => {
-    if (player.characterId) {
-        updateClientStats(player);
-    }
+mp.events.addCommand('heal', (player) => {
+    player.health = 100;
+    player.hunger = 100;
+    player.thirst = 100;
+    updateClientStats(player);
+    player.outputChatBox('!{#4caf50}Все показатели восстановлены!');
 });
 
 console.log('[Survival] ✅ Система выживания загружена!');

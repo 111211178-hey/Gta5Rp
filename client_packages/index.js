@@ -1941,6 +1941,192 @@ mp.events.add('playerSpawn', () => {
     mp.events.callRemote('survival:requestStats');
 });
 
+// ===== СИСТЕМА СПАВНА ПРЕДМЕТОВ (КЛИЕНТ) =====
+
+mp.events.add('cef:getItemCategories', () => {
+    mp.events.callRemote('admin:getItemCategories');
+});
+
+mp.events.add('cef:getCategoryItems', (categoryId) => {
+    mp.events.callRemote('admin:getCategoryItems', categoryId);
+});
+
+mp.events.add('cef:searchItems', (query) => {
+    mp.events.callRemote('admin:searchItems', query);
+});
+
+mp.events.add('cef:spawnItem', (itemId, quantity, targetId) => {
+    mp.events.callRemote('admin:spawnItem', itemId, quantity, targetId);
+});
+
+// Получение данных
+mp.events.add('client:receiveItemCategories', (categoriesJson) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    adminBrowser.execute(`displayItemCategories('${categoriesJson.replace(/'/g, "\\'")}')`);
+});
+
+mp.events.add('client:receiveCategoryItems', (itemsJson, categoryId) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    adminBrowser.execute(`displayCategoryItems('${itemsJson.replace(/'/g, "\\'")}', '${categoryId}')`);
+});
+
+mp.events.add('client:receiveSearchResults', (resultsJson) => {
+    if (!isAdminPanelOpen || !adminBrowser) return;
+    adminBrowser.execute(`displaySearchResults('${resultsJson.replace(/'/g, "\\'")}')`);
+});
+
+// ===== СИСТЕМА ТЕЛЕФОНА (КЛИЕНТ) =====
+
+let phoneBrowser = null;
+let isPhoneOpen = false;
+
+// Открытие телефона по клавише M
+mp.keys.bind(0x4D, true, () => { // M
+    if (isChatActive || isInventoryOpen || isAdminPanelOpen) return;
+    
+    if (isPhoneOpen) {
+        closePhone();
+    } else {
+        openPhone();
+    }
+});
+
+function openPhone() {
+    if (isPhoneOpen) return;
+    
+    mp.events.callRemote('phone:open');
+}
+
+mp.events.add('client:openPhone', (phoneDataJson) => {
+    try {
+        phoneBrowser = mp.browsers.new('package://cef/phone/index.html');
+        
+        setTimeout(() => {
+            mp.gui.cursor.visible = true;
+            if (typeof mp.gui.cursor.show === 'function') {
+                mp.gui.cursor.show(true, true);
+            }
+            
+            if (phoneBrowser) {
+                phoneBrowser.execute(`loadPhoneData('${phoneDataJson.replace(/'/g, "\\'")}')`);
+            }
+        }, 300);
+        
+        isPhoneOpen = true;
+        
+    } catch (err) {
+        console.error('[Phone] Ошибка:', err);
+    }
+});
+
+function closePhone() {
+    if (!isPhoneOpen) return;
+    
+    if (phoneBrowser) {
+        phoneBrowser.destroy();
+        phoneBrowser = null;
+    }
+    
+    mp.gui.cursor.visible = false;
+    if (typeof mp.gui.cursor.show === 'function') {
+        mp.gui.cursor.show(false, false);
+    }
+    
+    isPhoneOpen = false;
+}
+
+mp.events.add('cef:closePhone', () => closePhone());
+
+// Контакты
+mp.events.add('cef:addContact', (name, phone) => {
+    mp.events.callRemote('phone:addContact', name, phone);
+});
+
+mp.events.add('cef:deleteContact', (contactId) => {
+    mp.events.callRemote('phone:deleteContact', contactId);
+});
+
+mp.events.add('client:updateContacts', (contactsJson) => {
+    if (phoneBrowser) phoneBrowser.execute(`updateContacts('${contactsJson.replace(/'/g, "\\'")}')`);
+});
+
+// Сообщения
+mp.events.add('cef:sendMessage', (phone, message) => {
+    mp.events.callRemote('phone:sendMessage', phone, message);
+});
+
+mp.events.add('client:updateMessages', (messagesJson) => {
+    if (phoneBrowser) phoneBrowser.execute(`updateMessages('${messagesJson.replace(/'/g, "\\'")}')`);
+});
+
+mp.events.add('client:receiveMessage', (messageJson) => {
+    if (phoneBrowser) {
+        phoneBrowser.execute(`showNewMessage('${messageJson.replace(/'/g, "\\'")}')`);
+    }
+    mp.game.graphics.notify('~b~Новое сообщение!');
+});
+
+// Звонки
+mp.events.add('cef:call', (phone) => {
+    mp.events.callRemote('phone:call', phone);
+});
+
+mp.events.add('cef:acceptCall', () => {
+    mp.events.callRemote('phone:acceptCall');
+});
+
+mp.events.add('cef:declineCall', () => {
+    mp.events.callRemote('phone:declineCall');
+});
+
+mp.events.add('cef:endCall', () => {
+    mp.events.callRemote('phone:endCall');
+});
+
+mp.events.add('client:callStatus', (status, name) => {
+    if (phoneBrowser) phoneBrowser.execute(`updateCallStatus('${status}', '${name}')`);
+});
+
+mp.events.add('client:incomingCall', (callDataJson) => {
+    if (!isPhoneOpen) openPhone();
+    setTimeout(() => {
+        if (phoneBrowser) phoneBrowser.execute(`showIncomingCall('${callDataJson.replace(/'/g, "\\'")}')`);
+    }, 500);
+});
+
+mp.events.add('client:callAccepted', () => {
+    if (phoneBrowser) phoneBrowser.execute(`callAccepted()`);
+});
+
+mp.events.add('client:callEnded', (reason) => {
+    if (phoneBrowser) phoneBrowser.execute(`callEnded('${reason}')`);
+});
+
+// Банк
+mp.events.add('cef:bankTransfer', (phone, amount) => {
+    mp.events.callRemote('phone:bankTransfer', phone, amount);
+});
+
+mp.events.add('client:updateBankBalance', (balance) => {
+    if (phoneBrowser) phoneBrowser.execute(`updateBankBalance(${balance})`);
+});
+
+// Уведомления
+mp.events.add('client:phoneNotify', (type, message) => {
+    if (phoneBrowser) phoneBrowser.execute(`showNotification('${type}', '${message}')`);
+});
+
+// GPS
+mp.events.add('cef:setWaypoint', (x, y) => {
+    mp.events.callRemote('phone:setWaypoint', x, y);
+});
+
+mp.events.add('client:setWaypoint', (x, y) => {
+    mp.game.ui.setNewWaypoint(x, y);
+    mp.game.graphics.notify('~g~Маршрут проложен!');
+});
+
+console.log('[Phone Client] ✅ Система телефона загружена');
 console.log('[Inventory Client] ✅ Система предметов на земле загружена');
 console.log('[Inventory Client] ✅ Система сохранения одежды загружена');
 console.log('[Admin Extended Client] ✅ Все расширенные события зарегистрированы');

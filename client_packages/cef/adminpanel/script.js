@@ -1322,5 +1322,147 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// ===== СИСТЕМА ПРЕДМЕТОВ =====
+let currentCategory = null;
+let allPlayers = [];
+
+function loadItemsSection() {
+    mp.trigger('cef:getItemCategories');
+}
+
+function displayItemCategories(categoriesJson) {
+    try {
+        const categories = JSON.parse(categoriesJson);
+        const container = document.getElementById('itemCategories');
+        
+        container.innerHTML = categories.map(cat => `
+            <div class="category-card" onclick="loadCategory('${cat.id}')">
+                <div class="icon">${cat.icon}</div>
+                <div class="name">${cat.name}</div>
+                <div class="count">${cat.count} предметов</div>
+            </div>
+        `).join('');
+        
+        document.getElementById('categoryItemsContainer').style.display = 'none';
+        document.getElementById('itemCategories').style.display = 'grid';
+        document.getElementById('searchResults').style.display = 'none';
+    } catch (err) {
+        console.error('Ошибка:', err);
+    }
+}
+
+function loadCategory(categoryId) {
+    currentCategory = categoryId;
+    mp.trigger('cef:getCategoryItems', categoryId);
+}
+
+function displayCategoryItems(itemsJson, categoryId) {
+    try {
+        const items = JSON.parse(itemsJson);
+        const container = document.getElementById('categoryItems');
+        
+        container.innerHTML = items.map(item => `
+            <div class="item-card" onclick="openSpawnModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')">
+                <div class="item-name">${item.name}</div>
+                <div class="item-info">
+                    Вес: ${item.weight} кг | Стак: ${item.maxStack}
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('categoryTitle').textContent = items.length > 0 ? 
+            `Категория: ${items.length} предметов` : 'Пустая категория';
+        
+        document.getElementById('itemCategories').style.display = 'none';
+        document.getElementById('categoryItemsContainer').style.display = 'block';
+        document.getElementById('searchResults').style.display = 'none';
+    } catch (err) {
+        console.error('Ошибка:', err);
+    }
+}
+
+function showCategories() {
+    document.getElementById('categoryItemsContainer').style.display = 'none';
+    document.getElementById('itemCategories').style.display = 'grid';
+    document.getElementById('searchResults').style.display = 'none';
+    currentCategory = null;
+}
+
+function searchItems(query) {
+    if (query.length < 2) {
+        showCategories();
+        return;
+    }
+    
+    mp.trigger('cef:searchItems', query);
+}
+
+function displaySearchResults(resultsJson) {
+    try {
+        const results = JSON.parse(resultsJson);
+        const container = document.getElementById('searchResults');
+        
+        if (results.length === 0) {
+            container.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+        } else {
+            container.innerHTML = results.map(item => `
+                <div class="item-card" onclick="openSpawnModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-info">
+                        Вес: ${item.weight} кг | Стак: ${item.maxStack}
+                    </div>
+                    <div class="item-category">${item.categoryName}</div>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('itemCategories').style.display = 'none';
+        document.getElementById('categoryItemsContainer').style.display = 'none';
+        container.style.display = 'grid';
+    } catch (err) {
+        console.error('Ошибка:', err);
+    }
+}
+
+function openSpawnModal(itemId, itemName) {
+    document.getElementById('spawnItemId').value = itemId;
+    document.getElementById('spawnItemName').textContent = `Спавн: ${itemName}`;
+    document.getElementById('spawnQuantity').value = 1;
+    
+    // Заполняем список игроков
+    const select = document.getElementById('spawnTarget');
+    select.innerHTML = '<option value="">Себе</option>';
+    
+    if (allPlayers && allPlayers.length > 0) {
+        allPlayers.forEach(p => {
+            select.innerHTML += `<option value="${p.id}">${p.name} (ID: ${p.id})</option>`;
+        });
+    }
+    
+    document.getElementById('spawnModal').style.display = 'flex';
+}
+
+function closeSpawnModal() {
+    document.getElementById('spawnModal').style.display = 'none';
+}
+
+function confirmSpawn() {
+    const itemId = document.getElementById('spawnItemId').value;
+    const quantity = document.getElementById('spawnQuantity').value;
+    const targetId = document.getElementById('spawnTarget').value || null;
+    
+    mp.trigger('cef:spawnItem', itemId, quantity, targetId);
+    closeSpawnModal();
+}
+
+// Сохраняем список игроков при обновлении
+const originalLoadPlayers = window.loadPlayers;
+window.loadPlayers = function(playersJson) {
+    try {
+        allPlayers = JSON.parse(playersJson);
+    } catch (e) {}
+    if (originalLoadPlayers) originalLoadPlayers(playersJson);
+};
+
 console.log('[Admin Panel] ===== СКРИПТ ПОЛНОСТЬЮ ЗАГРУЖЕН =====');
 console.log('[Weapon Modal] ✅ Модальное окно оружия загружено');

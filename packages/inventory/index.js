@@ -338,38 +338,115 @@ mp.events.add('inventory:useItem', async (player, slot) => {
     }
 });
 
+// ===== ИСПОЛЬЗОВАНИЕ CONSUMABLE =====
 async function useConsumable(player, item) {
-    switch (item.name) {
-        case 'water':
-            player.thirst = Math.min((player.thirst || 0) + 30, 100);
-            player.outputChatBox('!{#2196f3}Вы выпили воду (+30 жажда)');
-            return true;
-        case 'bread':
-        case 'food':
-            player.hunger = Math.min((player.hunger || 0) + 25, 100);
-            player.outputChatBox('!{#ff9800}Вы поели (+25 голод)');
-            return true;
-        default:
-            player.outputChatBox('!{#4caf50}Вы использовали ' + (item.display_name || item.name));
-            return true;
+    const itemName = item.name.toLowerCase();
+    
+    // Еда
+    if (itemName.includes('bread') || itemName.includes('food') || itemName.includes('burger') || 
+        itemName.includes('pizza') || itemName.includes('apple') || itemName.includes('sandwich')) {
+        
+        const hungerRestore = getHungerRestore(itemName);
+        if (typeof global.restoreHunger === 'function') {
+            global.restoreHunger(player, hungerRestore);
+        } else {
+            player.hunger = Math.min(100, (player.hunger || 0) + hungerRestore);
+        }
+        player.outputChatBox(`!{#ff9800}🍔 Вы поели (+${hungerRestore} сытости)`);
+        return true;
     }
+    
+    // Напитки
+    if (itemName.includes('water') || itemName.includes('cola') || itemName.includes('juice') ||
+        itemName.includes('soda') || itemName.includes('drink')) {
+        
+        const thirstRestore = getThirstRestore(itemName);
+        if (typeof global.restoreThirst === 'function') {
+            global.restoreThirst(player, thirstRestore);
+        } else {
+            player.thirst = Math.min(100, (player.thirst || 0) + thirstRestore);
+        }
+        player.outputChatBox(`!{#03a9f4}💧 Вы попили (+${thirstRestore} жажды)`);
+        return true;
+    }
+    
+    // Алкоголь
+    if (itemName.includes('beer') || itemName.includes('vodka') || itemName.includes('wine') ||
+        itemName.includes('whiskey')) {
+        
+        if (typeof global.restoreThirst === 'function') {
+            global.restoreThirst(player, 20);
+            global.restoreHunger(player, 5);
+        } else {
+            player.thirst = Math.min(100, (player.thirst || 0) + 20);
+            player.hunger = Math.min(100, (player.hunger || 0) + 5);
+        }
+        player.outputChatBox(`!{#9c27b0}🍺 Вы выпили алкоголь (+20 жажды, +5 сытости)`);
+        return true;
+    }
+    
+    player.outputChatBox(`!{#4caf50}Вы использовали: ${item.display_name || item.name}`);
+    return true;
 }
 
+function getHungerRestore(itemName) {
+    if (itemName.includes('burger') || itemName.includes('pizza')) return 40;
+    if (itemName.includes('sandwich')) return 30;
+    if (itemName.includes('bread')) return 20;
+    if (itemName.includes('apple')) return 15;
+    if (itemName.includes('food')) return 25;
+    return 20;
+}
+
+function getThirstRestore(itemName) {
+    if (itemName.includes('water')) return 35;
+    if (itemName.includes('cola') || itemName.includes('soda')) return 25;
+    if (itemName.includes('juice')) return 30;
+    if (itemName.includes('drink')) return 20;
+    return 25;
+}
+
+// ===== ИСПОЛЬЗОВАНИЕ MEDICAL =====
 async function useMedical(player, item) {
-    switch (item.name) {
-        case 'bandage':
-            player.health = Math.min(player.health + 20, 100);
-            player.outputChatBox('!{#4caf50}Вы использовали бинт (+20 HP)');
-            return true;
-        case 'medkit':
-            player.health = 100;
-            player.outputChatBox('!{#4caf50}Вы использовали аптечку (HP восстановлено)');
-            return true;
-        default:
-            player.health = Math.min(player.health + 10, 100);
-            player.outputChatBox('!{#4caf50}+10 HP');
-            return true;
+    const itemName = item.name.toLowerCase();
+    
+    if (itemName.includes('bandage')) {
+        if (typeof global.restoreHealth === 'function') {
+            global.restoreHealth(player, 20);
+        } else {
+            player.health = Math.min(100, player.health + 20);
+        }
+        player.outputChatBox('!{#e91e63}🩹 Вы использовали бинт (+20 HP)');
+        return true;
     }
+    
+    if (itemName.includes('medkit') || itemName.includes('firstaid')) {
+        if (typeof global.restoreHealth === 'function') {
+            global.restoreHealth(player, 50);
+        } else {
+            player.health = Math.min(100, player.health + 50);
+        }
+        player.outputChatBox('!{#e91e63}💊 Вы использовали аптечку (+50 HP)');
+        return true;
+    }
+    
+    if (itemName.includes('painkiller') || itemName.includes('pills')) {
+        if (typeof global.restoreHealth === 'function') {
+            global.restoreHealth(player, 15);
+        } else {
+            player.health = Math.min(100, player.health + 15);
+        }
+        player.outputChatBox('!{#e91e63}💊 Вы приняли обезболивающее (+15 HP)');
+        return true;
+    }
+    
+    if (typeof global.restoreHealth === 'function') {
+        global.restoreHealth(player, 10);
+    } else {
+        player.health = Math.min(100, player.health + 10);
+    }
+    player.outputChatBox('!{#e91e63}+10 HP');
+    return true;
 }
 
 // ===== ЭКИПИРОВКА ОДЕЖДЫ =====
