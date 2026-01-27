@@ -119,6 +119,7 @@ async function getCharacterEquipment(characterId) {
 // ===== ПОИСК СВОБОДНОГО МЕСТА С УЧЁТОМ РАЗМЕРА =====
 async function findFreeSlotForSize(characterId, width, height) {
     try {
+        // Получаем ВСЕ предметы с их размерами
         const [items] = await db.query(`
             SELECT ci.slot, i.size_width, i.size_height
             FROM character_inventory ci
@@ -135,13 +136,14 @@ async function findFreeSlotForSize(characterId, width, height) {
             }
         }
         
-        // Отмечаем занятые ячейки
+        // Отмечаем ВСЕ занятые ячейки (включая ячейки больших предметов)
         items.forEach(item => {
             const startX = item.slot % GRID_WIDTH;
             const startY = Math.floor(item.slot / GRID_WIDTH);
             const itemW = item.size_width || 1;
             const itemH = item.size_height || 1;
             
+            // Помечаем все ячейки которые занимает предмет
             for (let dy = 0; dy < itemH; dy++) {
                 for (let dx = 0; dx < itemW; dx++) {
                     const x = startX + dx;
@@ -153,11 +155,12 @@ async function findFreeSlotForSize(characterId, width, height) {
             }
         });
         
-        // Ищем свободное место
+        // Ищем свободное место для нового предмета
         for (let y = 0; y <= GRID_HEIGHT - height; y++) {
             for (let x = 0; x <= GRID_WIDTH - width; x++) {
                 let canPlace = true;
                 
+                // Проверяем все ячейки которые займёт новый предмет
                 for (let dy = 0; dy < height && canPlace; dy++) {
                     for (let dx = 0; dx < width && canPlace; dx++) {
                         if (grid[y + dy][x + dx]) {
@@ -167,11 +170,14 @@ async function findFreeSlotForSize(characterId, width, height) {
                 }
                 
                 if (canPlace) {
-                    return y * GRID_WIDTH + x;
+                    const slot = y * GRID_WIDTH + x;
+                    console.log(`[Inventory] Найден свободный слот ${slot} для предмета ${width}x${height}`);
+                    return slot;
                 }
             }
         }
         
+        console.log(`[Inventory] Нет места для предмета ${width}x${height}`);
         return -1;
     } catch (err) {
         console.error('[Inventory] Ошибка поиска слота:', err);
@@ -242,6 +248,7 @@ mp.events.add('inventory:open', async (player) => {
     try {
         const inventory = await getCharacterInventory(player.characterId);
         const equipment = await getCharacterEquipment(player.characterId);
+        const quickSlots = await getQuickSlots(player.characterId);
         
         const [charResult] = await db.query(
             'SELECT name, surname, level, max_weight, money, bank, health, armor FROM characters WHERE id = ?',
@@ -254,7 +261,8 @@ mp.events.add('inventory:open', async (player) => {
         
         const inventoryData = {
             main: inventory,
-            equipment: equipment
+            equipment: equipment,
+            quickSlots: quickSlots
         };
         
         const charData = {
@@ -729,36 +737,62 @@ mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
             return;
         }
         
+        // Сначала проверяем можно ли добавить к существующему стаку
+        if (groundItem.max_stack > 1) {
+            const [existingItems] = await db.query(
+                'SELECT * FROM character_inventory WHERE character_id = ? AND item_id = ? AND quantity < ?',
+                [player.characterId, groundItem.item_id, groundItem.max_stack]
+            );
+            
+            if (existingItems.length > 0) {
+                const existing = existingItems[0];
+                const canAdd = groundItem.max_stack - existing.quantity;
+                const toAdd = Math.min(canAdd, groundItem.quantity);
+                
+                await db.query(
+                    'UPDATE character_inventory SET quantity = quantity + ? WHERE id = ?',
+                    [toAdd, existing.id]
+                );
+                
+                if (toAdd >= groundItem.quantity) {
+                    // Весь предмет добавлен в стак
+                    await db.query('DELETE FROM ground_items WHERE id = ?', [groundItemId]);
+                    
+                    const obj = groundItemObjects.get(groundItemId);
+                    if (obj && mp.objects.exists(obj)) obj.destroy();
+                    groundItemObjects.delete(groundItemId);
+                    
+                    player.outputChatBox(`!{#4caf50}Подобрано: ${groundItem.display_name || groundItem.name} x${groundItem.quantity}`);
+                    await sendInventoryUpdate(player);
+                    updateNearbyGroundItems(player);
+                    return;
+                } else {
+                    // Частично добавлено, остаток нужно положить в новый слот
+                    groundItem.quantity -= toAdd;
+                }
+            }
+        }
+        
+        // Ищем свободное место для нового предмета
         const freeSlot = await findFreeSlotForSize(player.characterId, width, height);
         
-        const [existingItems] = await db.query(
-            'SELECT * FROM character_inventory WHERE character_id = ? AND item_id = ? AND quantity < ?',
-            [player.characterId, groundItem.item_id, groundItem.max_stack]
-        );
-        
-        if (freeSlot === -1 && existingItems.length === 0) {
+        if (freeSlot === -1) {
             player.outputChatBox('!{#f44336}Инвентарь полон!');
             return;
         }
         
+        // Удаляем с земли
         await db.query('DELETE FROM ground_items WHERE id = ?', [groundItemId]);
         
         const obj = groundItemObjects.get(groundItemId);
-        if (obj && mp.objects.exists(obj)) {
-            obj.destroy();
-        }
+        if (obj && mp.objects.exists(obj)) obj.destroy();
         groundItemObjects.delete(groundItemId);
         
-        if (existingItems.length > 0 && groundItem.max_stack > 1) {
-            const existing = existingItems[0];
-            const newQuantity = Math.min(existing.quantity + groundItem.quantity, groundItem.max_stack);
-            await db.query('UPDATE character_inventory SET quantity = ? WHERE id = ?', [newQuantity, existing.id]);
-        } else {
-            await db.query(
-                'INSERT INTO character_inventory (character_id, item_id, slot, quantity, metadata) VALUES (?, ?, ?, ?, ?)',
-                [player.characterId, groundItem.item_id, freeSlot, groundItem.quantity, groundItem.metadata]
-            );
-        }
+        // Добавляем в инвентарь
+        await db.query(
+            'INSERT INTO character_inventory (character_id, item_id, slot, quantity, metadata) VALUES (?, ?, ?, ?, ?)',
+            [player.characterId, groundItem.item_id, freeSlot, groundItem.quantity, groundItem.metadata]
+        );
         
         player.outputChatBox(`!{#4caf50}Подобрано: ${groundItem.display_name || groundItem.name} x${groundItem.quantity}`);
         await sendInventoryUpdate(player);
@@ -766,6 +800,7 @@ mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
         
     } catch (err) {
         console.error('[Inventory] Ошибка подбора предмета:', err);
+        player.outputChatBox('!{#f44336}Ошибка при подборе предмета');
     }
 });
 
@@ -932,10 +967,12 @@ function getDistance(pos1, pos2) {
 async function sendInventoryUpdate(player) {
     const inventory = await getCharacterInventory(player.characterId);
     const equipment = await getCharacterEquipment(player.characterId);
+    const quickSlots = await getQuickSlots(player.characterId);
     
     player.call('client:updateInventory', [JSON.stringify({
         main: inventory,
-        equipment: equipment
+        equipment: equipment,
+        quickSlots: quickSlots
     })]);
 }
 
@@ -1100,19 +1137,30 @@ mp.events.add('inventory:splitItem', async (player, slot, quantity) => {
     if (!player.characterId) return;
     
     try {
+        slot = parseInt(slot);
+        quantity = parseInt(quantity);
+        
+        if (isNaN(slot) || isNaN(quantity) || quantity <= 0) {
+            player.outputChatBox('!{#f44336}Ошибка: неверные данные');
+            return;
+        }
+        
         const [items] = await db.query(`
-            SELECT ci.*, i.size_width, i.size_height, i.id as item_id
+            SELECT ci.*, i.size_width, i.size_height, i.id as item_id, i.name, i.display_name
             FROM character_inventory ci
             JOIN items i ON ci.item_id = i.id
             WHERE ci.character_id = ? AND ci.slot = ?
         `, [player.characterId, slot]);
         
-        if (items.length === 0) return;
+        if (items.length === 0) {
+            player.outputChatBox('!{#f44336}Предмет не найден');
+            return;
+        }
         
         const item = items[0];
         
-        if (item.quantity <= quantity || quantity <= 0) {
-            player.outputChatBox('!{#f44336}Невозможно разделить!');
+        if (item.quantity <= quantity) {
+            player.outputChatBox('!{#f44336}Невозможно разделить - недостаточно предметов');
             return;
         }
         
@@ -1121,7 +1169,7 @@ mp.events.add('inventory:splitItem', async (player, slot, quantity) => {
         
         const freeSlot = await findFreeSlotForSize(player.characterId, width, height);
         if (freeSlot === -1) {
-            player.outputChatBox('!{#f44336}Нет свободных слотов!');
+            player.outputChatBox('!{#f44336}Нет свободного места для разделения');
             return;
         }
         
@@ -1137,12 +1185,12 @@ mp.events.add('inventory:splitItem', async (player, slot, quantity) => {
             [player.characterId, item.item_id, freeSlot, quantity, item.metadata]
         );
         
-        player.outputChatBox('!{#4caf50}Предмет разделён');
+        player.outputChatBox(`!{#4caf50}Разделено: ${item.display_name || item.name} x${quantity}`);
         await sendInventoryUpdate(player);
         
     } catch (err) {
         console.error('[Inventory] Ошибка разделения:', err);
-        player.outputChatBox('!{#f44336}Ошибка при разделении предмета');
+        player.outputChatBox('!{#f44336}Ошибка при разделении');
     }
 });
 
@@ -1231,5 +1279,152 @@ setInterval(async () => {
 }, 5 * 60 * 1000);
 
 setTimeout(loadGroundItems, 3000);
+
+// ===== СИСТЕМА БЫСТРЫХ СЛОТОВ =====
+
+// Получение быстрых слотов
+async function getQuickSlots(characterId) {
+    try {
+        const [slots] = await db.query(`
+            SELECT qs.slot_index, qs.inventory_slot, ci.item_id, i.name, i.display_name, i.icon, i.type
+            FROM character_quick_slots qs
+            LEFT JOIN character_inventory ci ON qs.inventory_slot = ci.slot AND ci.character_id = qs.character_id
+            LEFT JOIN items i ON ci.item_id = i.id
+            WHERE qs.character_id = ?
+            ORDER BY qs.slot_index
+        `, [characterId]);
+        
+        const quickSlots = [null, null, null, null, null];
+        
+        slots.forEach(slot => {
+            if (slot.slot_index >= 0 && slot.slot_index < 5) {
+                if (slot.item_id) {
+                    quickSlots[slot.slot_index] = {
+                        inventorySlot: slot.inventory_slot,
+                        id: slot.name,
+                        name: slot.display_name || slot.name,
+                        icon: slot.icon,
+                        type: slot.type
+                    };
+                } else {
+                    quickSlots[slot.slot_index] = null;
+                }
+            }
+        });
+        
+        return quickSlots;
+    } catch (err) {
+        console.error('[Inventory] Ошибка получения быстрых слотов:', err);
+        return [null, null, null, null, null];
+    }
+}
+
+// Назначение предмета на быстрый слот
+mp.events.add('inventory:assignQuickSlot', async (player, inventorySlot, quickSlotIndex) => {
+    if (!player.characterId) return;
+    
+    try {
+        inventorySlot = parseInt(inventorySlot);
+        quickSlotIndex = parseInt(quickSlotIndex);
+        
+        if (quickSlotIndex < 0 || quickSlotIndex > 4) {
+            player.outputChatBox('!{#f44336}Неверный номер слота');
+            return;
+        }
+        
+        // Проверяем что предмет существует
+        const [items] = await db.query(`
+            SELECT ci.*, i.name, i.display_name, i.type, i.usable
+            FROM character_inventory ci
+            JOIN items i ON ci.item_id = i.id
+            WHERE ci.character_id = ? AND ci.slot = ?
+        `, [player.characterId, inventorySlot]);
+        
+        if (items.length === 0) {
+            player.outputChatBox('!{#f44336}Предмет не найден');
+            return;
+        }
+        
+        const item = items[0];
+        
+        // Проверяем можно ли использовать предмет
+        if (!item.usable && item.type !== 'consumable' && item.type !== 'medical' && item.type !== 'weapon') {
+            player.outputChatBox('!{#f44336}Этот предмет нельзя назначить на быстрый слот');
+            return;
+        }
+        
+        // Удаляем старую привязку если есть
+        await db.query(
+            'DELETE FROM character_quick_slots WHERE character_id = ? AND slot_index = ?',
+            [player.characterId, quickSlotIndex]
+        );
+        
+        // Удаляем этот предмет из других быстрых слотов
+        await db.query(
+            'DELETE FROM character_quick_slots WHERE character_id = ? AND inventory_slot = ?',
+            [player.characterId, inventorySlot]
+        );
+        
+        // Добавляем новую привязку
+        await db.query(
+            'INSERT INTO character_quick_slots (character_id, slot_index, inventory_slot) VALUES (?, ?, ?)',
+            [player.characterId, quickSlotIndex, inventorySlot]
+        );
+        
+        player.outputChatBox(`!{#4caf50}${item.display_name || item.name} назначен на слот ${quickSlotIndex + 1}`);
+        await sendInventoryUpdate(player);
+        
+    } catch (err) {
+        console.error('[Inventory] Ошибка назначения быстрого слота:', err);
+    }
+});
+
+// Очистка быстрого слота
+mp.events.add('inventory:clearQuickSlot', async (player, quickSlotIndex) => {
+    if (!player.characterId) return;
+    
+    try {
+        quickSlotIndex = parseInt(quickSlotIndex);
+        
+        await db.query(
+            'DELETE FROM character_quick_slots WHERE character_id = ? AND slot_index = ?',
+            [player.characterId, quickSlotIndex]
+        );
+        
+        player.outputChatBox(`!{#ff9800}Слот ${quickSlotIndex + 1} очищен`);
+        await sendInventoryUpdate(player);
+        
+    } catch (err) {
+        console.error('[Inventory] Ошибка очистки быстрого слота:', err);
+    }
+});
+
+// Использование быстрого слота
+mp.events.add('inventory:useQuickSlot', async (player, quickSlotIndex) => {
+    if (!player.characterId) return;
+    
+    try {
+        quickSlotIndex = parseInt(quickSlotIndex);
+        
+        const [slots] = await db.query(`
+            SELECT qs.inventory_slot
+            FROM character_quick_slots qs
+            WHERE qs.character_id = ? AND qs.slot_index = ?
+        `, [player.characterId, quickSlotIndex]);
+        
+        if (slots.length === 0) {
+            player.outputChatBox('!{#ff9800}Слот пуст');
+            return;
+        }
+        
+        const inventorySlot = slots[0].inventory_slot;
+        
+        // Вызываем использование предмета
+        mp.events.call('inventory:useItem', player, inventorySlot);
+        
+    } catch (err) {
+        console.error('[Inventory] Ошибка использования быстрого слота:', err);
+    }
+});
 
 console.log('[Inventory System] ✅ Система инвентаря загружена!');

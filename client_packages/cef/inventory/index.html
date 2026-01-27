@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Инвентарь</title>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=7">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -15,11 +15,11 @@
                 <h3>Окружение</h3>
             </div>
             <div class="header-section center">
-                <h2 id="playerName">Kit Tysh</h2>
+                <h2 id="playerName">Игрок</h2>
             </div>
             <div class="header-section right">
                 <h3>Инвентарь</h3>
-                <span class="weight" id="weightDisplay">6.50 / 50 kg</span>
+                <span class="weight" id="weightDisplay">0 / 50 kg</span>
                 <button class="close-btn" id="closeBtn">
                     <i class="fas fa-times"></i>
                 </button>
@@ -27,84 +27,74 @@
         </div>
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
-			<div class="inventory-content">
-			<!-- ЛЕВАЯ ПАНЕЛЬ: ОКРУЖЕНИЕ + РЮКЗАК -->
-			<div class="inventory-panel left-panel" id="dropZone">
-				<!-- ОКРУЖЕНИЕ -->
-				<div class="section-title">
-					<i class="fas fa-map-marker-alt"></i>
-					<span>Окружение</span>
-				</div>
-				<div class="inventory-grid environment-grid" id="environmentGrid">
-					<!-- 4x6 = 24 слота (генерируются JS) -->
-				</div>
-				
-				<!-- РЮКЗАК -->
-				<div class="section-title backpack-title" id="backpackTitle">
-					<i class="fas fa-backpack"></i>
-					<span>Рюкзак</span>
-					<span class="backpack-status" id="backpackStatus">Не надет</span>
-				</div>
-				<div class="inventory-grid backpack-grid" id="backpackGrid">
-					<!-- 4x5 = 20 слотов (генерируются JS) -->
-				</div>
-			</div>
+        <div class="inventory-content">
+            <!-- ЛЕВАЯ ПАНЕЛЬ: ОКРУЖЕНИЕ + РЮКЗАК -->
+            <div class="inventory-panel left-panel" id="dropZone">
+                <!-- ОКРУЖЕНИЕ -->
+                <div class="section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Окружение</span>
+                </div>
+                <div class="inventory-grid environment-grid" id="environmentGrid">
+                    <!-- Предметы на земле -->
+                </div>
+                
+                <!-- РЮКЗАК -->
+                <div class="section-title backpack-title" id="backpackTitle">
+                    <i class="fas fa-backpack"></i>
+                    <span>Рюкзак</span>
+                    <span class="backpack-status" id="backpackStatus">Не надет</span>
+                </div>
+                <div class="inventory-grid backpack-grid" id="backpackGrid">
+                    <!-- Слоты рюкзака -->
+                </div>
+            </div>
 
             <!-- ЦЕНТР: ЭКИПИРОВКА -->
             <div class="inventory-panel center-panel">
                 <!-- СИЛУЭТ ПЕРСОНАЖА -->
                 <div class="character-preview">
                     <svg class="character-silhouette" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Голова -->
                         <ellipse cx="100" cy="50" rx="35" ry="40" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                        <!-- Тело -->
                         <rect x="70" y="90" width="60" height="100" rx="10" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                        <!-- Левая рука -->
                         <rect x="40" y="100" width="30" height="90" rx="8" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                        <!-- Правая рука -->
                         <rect x="130" y="100" width="30" height="90" rx="8" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                        <!-- Левая нога -->
                         <rect x="75" y="190" width="22" height="120" rx="8" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                        <!-- Правая нога -->
                         <rect x="103" y="190" width="22" height="120" rx="8" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
                     </svg>
 
                     <!-- СЛОТЫ ОДЕЖДЫ (вокруг силуэта) -->
                     <div class="equipment-slots">
-                        <!-- Шапка -->
-                        <div class="equipment-slot" data-slot="head">
-                            <i class="fas fa-hat-cowboy"></i>
-                            <span class="slot-label">Шапка</span>
-                        </div>
-                        <!-- Маска -->
+                        <!-- ЛЕВАЯ КОЛОНКА -->
                         <div class="equipment-slot" data-slot="mask">
                             <i class="fas fa-mask"></i>
                             <span class="slot-label">Маска</span>
                         </div>
-                        <!-- Верх -->
                         <div class="equipment-slot" data-slot="top">
                             <i class="fas fa-shirt"></i>
                             <span class="slot-label">Верх</span>
                         </div>
-                        <!-- ��юкзак -->
-                        <div class="equipment-slot" data-slot="backpack">
-                            <i class="fas fa-backpack"></i>
-                            <span class="slot-label">Рюкзак</span>
-                        </div>
-                        <!-- Низ -->
                         <div class="equipment-slot" data-slot="legs">
                             <i class="fas fa-socks"></i>
                             <span class="slot-label">Низ</span>
                         </div>
-                        <!-- Обувь -->
                         <div class="equipment-slot" data-slot="shoes">
                             <i class="fas fa-shoe-prints"></i>
                             <span class="slot-label">Обувь</span>
                         </div>
-                        <!-- Аксессуар -->
+                        
+                        <!-- ПРАВАЯ КОЛОНКА -->
+                        <div class="equipment-slot" data-slot="head">
+                            <i class="fas fa-hat-cowboy"></i>
+                            <span class="slot-label">Шапка</span>
+                        </div>
                         <div class="equipment-slot" data-slot="accessory">
                             <i class="fas fa-watch"></i>
                             <span class="slot-label">Аксессуар</span>
+                        </div>
+                        <div class="equipment-slot" data-slot="backpack">
+                            <i class="fas fa-backpack"></i>
+                            <span class="slot-label">Рюкзак</span>
                         </div>
                     </div>
                 </div>
@@ -124,62 +114,61 @@
                         <span class="slot-label">Холодное</span>
                     </div>
                 </div>
-
-                <!-- СТАТЫ И ДЕНЬГИ -->
-                <div class="character-info">
-                    <div class="money-display">
-                        <div class="money-item">
-                            <i class="fas fa-wallet"></i>
-                            <span id="cashAmount">$0</span>
-                        </div>
-                        <div class="money-item">
-                            <i class="fas fa-university"></i>
-                            <span id="bankAmount">$0</span>
-                        </div>
-                    </div>
-
-                    <div class="stats-bars">
-                        <div class="stat-bar">
-                            <i class="fas fa-droplet" style="color: #4fc3f7;"></i>
-                            <div class="stat-bar-bg">
-                                <div class="stat-bar-fill thirst" id="thirstBar" style="width: 100%"></div>
-                            </div>
-                            <span class="stat-value" id="thirstValue">100</span>
-                        </div>
-                        <div class="stat-bar">
-                            <i class="fas fa-burger" style="color: #ffb74d;"></i>
-                            <div class="stat-bar-bg">
-                                <div class="stat-bar-fill hunger" id="hungerBar" style="width: 100%"></div>
-                            </div>
-                            <span class="stat-value" id="hungerValue">100</span>
-                        </div>
-                        <div class="stat-bar">
-                            <i class="fas fa-heart" style="color: #e57373;"></i>
-                            <div class="stat-bar-bg">
-                                <div class="stat-bar-fill health" id="healthBar" style="width: 100%"></div>
-                            </div>
-                            <span class="stat-value" id="healthValue">100</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- ПРАВАЯ ПАНЕЛЬ: ИНВЕНТАРЬ -->
             <div class="inventory-panel right-panel">
                 <!-- ОСНОВНОЙ ИНВЕНТАРЬ -->
                 <div class="inventory-grid main-inventory" id="mainInventory">
-                    <!-- 5x6 = 30 слотов (генерируются JS) -->
+                    <!-- Генерируется JS -->
                 </div>
 
-                <!-- АКТИВНЫЕ ПРЕДМЕТЫ -->
+                <!-- АКТИВНЫЕ ПРЕДМЕТЫ (БЫСТРЫЕ СЛОТЫ) -->
                 <div class="active-items">
                     <div class="section-title">
                         <i class="fas fa-star"></i>
-                        <span>Активные предметы</span>
+                        <span>Быстрые слоты</span>
                     </div>
                     <div class="quick-slots" id="quickSlots">
-                        <!-- Быстрые слоты 1-5 -->
+                        <!-- Генерируется JS -->
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ СТАТОВ ВНИЗУ -->
+        <div class="stats-panel" id="statsPanel">
+            <div class="money-row">
+                <div class="money-item">
+                    <i class="fas fa-wallet"></i>
+                    <span id="cashAmount">$0</span>
+                </div>
+                <div class="money-item">
+                    <i class="fas fa-university"></i>
+                    <span id="bankAmount">$0</span>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <i class="fas fa-heart"></i>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill health" id="healthBar" style="width: 100%"></div>
+                    </div>
+                    <span class="stat-value" id="healthValue">100</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-droplet"></i>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill thirst" id="thirstBar" style="width: 100%"></div>
+                    </div>
+                    <span class="stat-value" id="thirstValue">100</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-utensils"></i>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill hunger" id="hungerBar" style="width: 100%"></div>
+                    </div>
+                    <span class="stat-value" id="hungerValue">100</span>
                 </div>
             </div>
         </div>
@@ -216,6 +205,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=5"></script>
+    <script src="script.js?v=7"></script>
 </body>
 </html>

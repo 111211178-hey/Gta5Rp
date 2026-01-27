@@ -204,7 +204,7 @@ body {
     overflow-y: auto;
     gap: 4px;
     padding: 0;
-    max-height: 550px;
+    max-height: 450px;
 }
 
 /* ===== СЛОТЫ ===== */
@@ -307,11 +307,11 @@ body {
 
 .equipment-slot {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -329,58 +329,74 @@ body {
 }
 
 .equipment-slot.has-item {
-    background: rgba(20, 25, 35, 0.9);
-    border-color: rgba(255, 193, 7, 0.4);
+    background: rgba(30, 40, 50, 0.9);
+    border-color: rgba(76, 175, 80, 0.6);
 }
 
-.equipment-slot i {
-    font-size: 22px;
+.equipment-slot.has-item.item-type-weapon {
+    border-color: rgba(244, 67, 54, 0.7);
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.equipment-slot.has-item.item-type-clothing {
+    border-color: rgba(33, 150, 243, 0.7);
+    background: rgba(33, 150, 243, 0.2);
+}
+
+.equipment-slot.drag-over {
+    background: rgba(76, 175, 80, 0.3) !important;
+    border-color: #4caf50 !important;
+    transform: scale(1.05);
+}
+
+.equipment-slot > i {
+    font-size: 20px;
     color: rgba(255, 255, 255, 0.5);
 }
 
-.slot-label {
+.equipment-slot > .slot-label {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.6);
     text-align: center;
 }
 
-/* ===== ПОЗИЦИОНИРОВАНИЕ СЛОТОВ ЭКИПИРОВКИ (РАЗДВИНУТЫ!) ===== */
+/* ===== ПОЗИЦИОНИРОВАНИЕ СЛОТОВ ЭКИПИРОВКИ ===== */
 
 /* ЛЕВАЯ СТОРОНА */
 .equipment-slot[data-slot="mask"] {
     top: 40px;
-    left: -85px;
+    left: -90px;
 }
 
 .equipment-slot[data-slot="top"] {
     top: 120px;
-    left: -85px;
+    left: -90px;
 }
 
 .equipment-slot[data-slot="legs"] {
     bottom: 130px;
-    left: -85px;
+    left: -90px;
 }
 
 .equipment-slot[data-slot="shoes"] {
     bottom: 50px;
-    left: -85px;
+    left: -90px;
 }
 
 /* ПРАВАЯ СТОРОНА */
 .equipment-slot[data-slot="head"] {
     top: 10px;
-    right: -85px;
+    right: -90px;
 }
 
 .equipment-slot[data-slot="accessory"] {
     top: 90px;
-    right: -85px;
+    right: -90px;
 }
 
 .equipment-slot[data-slot="backpack"] {
     top: 170px;
-    right: -85px;
+    right: -90px;
 }
 
 /* ===== СЛОТЫ ОРУЖИЯ ===== */
@@ -393,36 +409,79 @@ body {
 
 .weapon-slot {
     position: static;
-    width: 70px;
-    height: 70px;
+    width: 75px;
+    height: 75px;
     transform: none;
 }
 
-/* ===== ИНФОРМАЦИЯ О ПЕРСОНАЖЕ (УБИРАЕМ ИЗ ЦЕНТРА) ===== */
-.character-info {
-    display: none;
+/* ===== АКТИВНЫЕ ПРЕДМЕТЫ (БЫСТРЫЕ СЛОТЫ) ===== */
+.active-items {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ===== СТАТЫ ВНИЗУ ЭКРАНА (НОВЫЙ БЛОК) ===== */
-.bottom-stats {
+.active-items .section-title {
+    margin-bottom: 8px;
+}
+
+.quick-slots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.quick-slot {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-slot:hover {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.5);
+}
+
+.quick-slot-number {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* ===== ПАНЕЛЬ СТАТОВ ВНИЗУ ===== */
+.stats-panel {
     position: fixed;
-    bottom: 20px;
+    bottom: 15px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
-    gap: 10px;
     align-items: center;
-    z-index: 1000;
+    gap: 8px;
+    z-index: 100;
 }
 
-.money-display {
+.money-row {
     display: flex;
-    gap: 20px;
-    background: rgba(15, 20, 30, 0.85);
-    padding: 8px 20px;
+    gap: 25px;
+    background: rgba(15, 20, 30, 0.9);
+    padding: 8px 25px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .money-item {
@@ -435,116 +494,56 @@ body {
 
 .money-item i {
     font-size: 16px;
-    color: rgba(255, 193, 7, 0.8);
+    color: rgba(255, 193, 7, 0.9);
 }
 
-/* ===== СТАТЫ ===== */
-.stats-bars {
+.stats-row {
     display: flex;
-    gap: 15px;
-    background: rgba(15, 20, 30, 0.85);
+    gap: 20px;
+    background: rgba(15, 20, 30, 0.9);
     padding: 10px 20px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stat-bar {
+.stat-item {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.stat-bar i {
-    font-size: 18px;
+.stat-item i {
+    font-size: 16px;
 }
 
-.stat-bar-bg {
-    width: 200px;
-    height: 20px;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 10px;
+.stat-item i.fa-heart { color: #e57373; }
+.stat-item i.fa-droplet { color: #4fc3f7; }
+.stat-item i.fa-utensils { color: #ffb74d; }
+
+.stat-bar-container {
+    width: 100px;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-bar-fill {
     height: 100%;
+    border-radius: 6px;
     transition: width 0.3s ease;
-    border-radius: 10px;
 }
 
-.stat-bar-fill.thirst {
-    background: linear-gradient(90deg, #4fc3f7 0%, #03a9f4 100%);
-}
-
-.stat-bar-fill.hunger {
-    background: linear-gradient(90deg, #ffb74d 0%, #ff9800 100%);
-}
-
-.stat-bar-fill.health {
-    background: linear-gradient(90deg, #e57373 0%, #f44336 100%);
-}
+.stat-bar-fill.health { background: linear-gradient(90deg, #c62828, #e57373); }
+.stat-bar-fill.thirst { background: linear-gradient(90deg, #0288d1, #4fc3f7); }
+.stat-bar-fill.hunger { background: linear-gradient(90deg, #f57c00, #ffb74d); }
 
 .stat-value {
-    min-width: 35px;
-    text-align: right;
-    font-size: 14px;
+    min-width: 28px;
+    font-size: 12px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.9);
-}
-
-/* ===== АКТИВНЫЕ ПРЕДМЕТЫ (ПОД СТАТАМИ) ===== */
-.active-items {
-    position: fixed;
-    bottom: 120px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-}
-
-.active-items .section-title {
-    margin-bottom: 8px;
-    justify-content: center;
-}
-
-.quick-slots {
-    display: flex;
-    gap: 8px;
-    padding: 10px;
-    background: rgba(15, 20, 30, 0.85);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.quick-slot {
-    width: 70px;
-    height: 70px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.quick-slot:hover {
-    background: rgba(255, 193, 7, 0.1);
-    border-color: rgba(255, 193, 7, 0.4);
-}
-
-.quick-slot-number {
-    position: absolute;
-    bottom: 4px;
-    right: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.7);
-    padding: 2px 5px;
-    border-radius: 3px;
 }
 
 /* ===== КОНТЕКСТНОЕ МЕНЮ ===== */
@@ -640,90 +639,18 @@ body {
 
 /* ===== АНИМАЦИИ ===== */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
 
-/* Зона выброса */
-.environment-panel {
-    transition: all 0.3s ease;
-    border: 2px dashed transparent;
-}
-
-.environment-panel.drop-hover {
+/* ===== ЗОНА ВЫБРОСА ===== */
+.left-panel.drop-hover {
     border-color: #f44336 !important;
-    background: rgba(244, 67, 54, 0.2) !important;
-    box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
+    background: rgba(244, 67, 54, 0.15) !important;
+    box-shadow: inset 0 0 20px rgba(244, 67, 54, 0.3);
 }
 
-.drop-hint {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    color: rgba(255, 255, 255, 0.5);
-    text-align: center;
-    min-height: 100px;
-}
-
-.drop-hint .drop-icon {
-    font-size: 32px;
-    margin-bottom: 10px;
-    opacity: 0.5;
-}
-
-.environment-panel.drop-hover .drop-hint {
-    color: #f44336;
-}
-
-.environment-panel.drop-hover .drop-icon {
-    opacity: 1;
-    animation: bounce 0.5s infinite;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-}
-
-/* Предметы на земле */
-.ground-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 10px;
-}
-
-.ground-item {
-    width: 50px;
-    height: 50px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ground-item:hover {
-    border-color: #4caf50;
-    background: rgba(76, 175, 80, 0.2);
-}
-
-.ground-item .item-icon {
-    font-size: 24px;
-}
-
-/* Предметы на земле */
+/* ===== ПРЕДМЕТЫ НА ЗЕМЛЕ ===== */
 .ground-item-slot {
     width: 60px;
     height: 60px;
@@ -757,7 +684,9 @@ body {
     font-size: 11px;
     font-weight: bold;
     color: #fff;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1px 4px;
+    border-radius: 3px;
 }
 
 .ground-item-slot .item-distance {
@@ -779,35 +708,14 @@ body {
     padding: 20px;
 }
 
-/* Анимация подбора */
-.ground-item-slot.picking-up {
-    animation: pickupPulse 0.3s ease;
-}
-
-@keyframes pickupPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); opacity: 0.5; }
-    100% { transform: scale(0); opacity: 0; }
-}
-
-/* ===== СЕТКА ИНВЕНТАРЯ ===== */
-#inventoryGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 50px);
-    grid-template-rows: repeat(8, 50px);
-    gap: 2px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    position: relative;
-}
-
+/* ===== ЯЧЕЙКИ ИНВЕНТАРЯ ===== */
 .inventory-cell {
     width: 50px;
     height: 50px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 4px;
+    box-sizing: border-box;
 }
 
 .inventory-cell:hover {
@@ -821,35 +729,36 @@ body {
 }
 
 .inventory-cell.drag-over {
-    background: rgba(76, 175, 80, 0.3) !important;
+    background: rgba(76, 175, 80, 0.4) !important;
     border-color: #4caf50 !important;
 }
 
 .inventory-cell.drag-invalid {
-    background: rgba(244, 67, 54, 0.3) !important;
+    background: rgba(244, 67, 54, 0.4) !important;
     border-color: #f44336 !important;
 }
 
-/* ===== ПРЕДМЕТЫ ===== */
+/* ===== ПРЕДМЕТЫ ИНВЕНТАРЯ ===== */
 .inventory-item {
     position: absolute;
-    background: linear-gradient(135deg, rgba(60, 60, 60, 0.9), rgba(40, 40, 40, 0.9));
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(60, 60, 60, 0.95), rgba(40, 40, 40, 0.95));
+    border: 2px solid rgba(255, 255, 255, 0.25);
     border-radius: 6px;
     cursor: grab;
-    transition: all 0.15s ease;
     z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .inventory-item:hover {
     border-color: #4caf50;
     transform: scale(1.02);
     z-index: 20;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
 .inventory-item.dragging {
@@ -858,7 +767,7 @@ body {
     z-index: 100;
 }
 
-/* Размеры */
+/* Размеры предметов */
 .inventory-item.size-1x1 { width: 50px; height: 50px; }
 .inventory-item.size-2x1 { width: 102px; height: 50px; }
 .inventory-item.size-1x2 { width: 50px; height: 102px; }
@@ -871,59 +780,60 @@ body {
 /* Типы предметов */
 .inventory-item.type-weapon {
     border-color: #f44336;
-    background: linear-gradient(135deg, rgba(244, 67, 54, 0.2), rgba(40, 40, 40, 0.9));
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.25), rgba(40, 40, 40, 0.95));
 }
 
 .inventory-item.type-clothing {
     border-color: #2196f3;
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(40, 40, 40, 0.9));
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.25), rgba(40, 40, 40, 0.95));
 }
 
 .inventory-item.type-consumable {
     border-color: #4caf50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(40, 40, 40, 0.9));
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.25), rgba(40, 40, 40, 0.95));
 }
 
 .inventory-item.type-medical {
     border-color: #e91e63;
-    background: linear-gradient(135deg, rgba(233, 30, 99, 0.2), rgba(40, 40, 40, 0.9));
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.25), rgba(40, 40, 40, 0.95));
 }
 
 .inventory-item.type-tool {
     border-color: #ff9800;
-    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(40, 40, 40, 0.9));
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.25), rgba(40, 40, 40, 0.95));
 }
 
-/* Иконки */
+/* Иконки в предметах */
 .item-icon-container {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     height: 70%;
+    padding: 2px;
 }
 
 .item-image {
-    max-width: 85%;
-    max-height: 85%;
+    max-width: 90%;
+    max-height: 90%;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 .item-emoji-icon {
-    font-size: 24px;
+    text-align: center;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
+.inventory-item.size-1x1 .item-emoji-icon { font-size: 22px; }
 .inventory-item.size-2x1 .item-emoji-icon,
-.inventory-item.size-2x2 .item-emoji-icon { font-size: 32px; }
-
+.inventory-item.size-2x2 .item-emoji-icon { font-size: 30px; }
 .inventory-item.size-3x1 .item-emoji-icon,
-.inventory-item.size-3x2 .item-emoji-icon { font-size: 40px; }
-
+.inventory-item.size-3x2 .item-emoji-icon { font-size: 38px; }
 .inventory-item.size-4x1 .item-emoji-icon,
-.inventory-item.size-4x2 .item-emoji-icon { font-size: 48px; }
+.inventory-item.size-4x2 .item-emoji-icon { font-size: 44px; }
 
-/* Информация */
+/* Информация о предмете */
 .item-info {
     position: absolute;
     bottom: 2px;
@@ -934,19 +844,120 @@ body {
     padding: 0 4px;
 }
 
-.item-quantity {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 1px 4px;
-    border-radius: 3px;
-    color: #fff;
-    font-weight: bold;
-    font-size: 11px;
-}
-
 .item-weight-badge {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     padding: 1px 4px;
     border-radius: 3px;
     color: #aaa;
     font-size: 9px;
+}
+
+/* ===== СТИЛИ ДЛЯ ЭКИПИРОВАННЫХ ПРЕДМЕТОВ ===== */
+.equipment-slot.has-item > i,
+.equipment-slot.has-item > .slot-label {
+    display: none !important;
+}
+
+.equip-item-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+}
+
+.equip-item-container img {
+    max-width: 50px;
+    max-height: 45px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+.equip-item-container .equip-emoji {
+    font-size: 26px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.equip-item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 8px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.75);
+    padding: 3px 2px;
+    border-radius: 0 0 8px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== БЫСТРЫЕ СЛОТЫ ===== */
+.quick-slot {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-slot:hover {
+    background: rgba(255, 193, 7, 0.2);
+    border-color: rgba(255, 193, 7, 0.6);
+    transform: scale(1.05);
+}
+
+.quick-slot.has-item {
+    background: rgba(30, 40, 50, 0.8);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.quick-slot.drag-over {
+    background: rgba(76, 175, 80, 0.3) !important;
+    border-color: #4caf50 !important;
+    transform: scale(1.08);
+}
+
+.quick-slot-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.quick-slot-icon img {
+    max-width: 38px;
+    max-height: 38px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+
+.quick-slot-icon .quick-emoji {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+
+.quick-slot-number {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.quick-slot.has-item .quick-slot-number {
+    color: rgba(255, 193, 7, 0.9);
 }

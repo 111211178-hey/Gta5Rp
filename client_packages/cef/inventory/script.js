@@ -24,6 +24,7 @@ let draggedFrom = null;
 let draggedFromSlot = null;
 let draggedWidth = 1;
 let draggedHeight = 1;
+let quickSlotsData = [null, null, null, null, null];
 
 // ===== КОНСТАНТЫ СЕТКИ =====
 const GRID_WIDTH = 5;
@@ -31,7 +32,7 @@ const GRID_HEIGHT = 7;
 const CELL_SIZE = 50;
 const CELL_GAP = 2;
 
-// ===== БАЗА ДАННЫХ ПРЕДМЕТОВ (для эмодзи иконок) =====
+// ===== БАЗА ДАННЫХ ПРЕДМЕТОВ =====
 const itemIcons = {
     'water': '💧', 'bread': '🍞', 'food': '🍔', 'burger': '🍔', 'pizza': '🍕',
     'apple': '🍎', 'cola': '🥤', 'beer': '🍺', 'bandage': '🩹', 'medkit': '💊',
@@ -141,15 +142,12 @@ function setupDropZone() {
         
         if (!draggedItem) return;
         
-        // Проверяем откуда перетаскиваем
         if (draggedFrom && draggedFrom.type === 'equipment') {
-            // Выбрасываем из экипировки
             if (typeof mp !== 'undefined') {
                 mp.trigger('cef:dropEquipment', draggedFrom.slotType);
             }
             showNotification('info', `Выброшено: ${draggedItem.name}`);
         } else if (draggedFromSlot !== null && typeof draggedFromSlot === 'number') {
-            // Выбрасываем из инвентаря
             const quantity = draggedItem.quantity || 1;
             
             if (quantity > 1) {
@@ -180,35 +178,11 @@ function renderInventory() {
     const grid = document.getElementById('mainInventory');
     if (!grid) return;
     
-    // Сбрасываем ячейки
     const cells = grid.querySelectorAll('.inventory-cell');
-    cells.forEach(cell => {
-        cell.classList.remove('occupied');
-    });
+    cells.forEach(cell => cell.classList.remove('occupied'));
     
-    // Удаляем старые предметы
     grid.querySelectorAll('.inventory-item').forEach(item => item.remove());
     
-    // Создаём карту занятости для проверки наложений
-    const occupiedMap = new Map();
-    
-    // Собираем информацию о всех предметах
-    inventory.main.forEach((item, slot) => {
-        if (!item) return;
-        const width = item.width || 1;
-        const height = item.height || 1;
-        const startX = slot % GRID_WIDTH;
-        const startY = Math.floor(slot / GRID_WIDTH);
-        
-        for (let dy = 0; dy < height; dy++) {
-            for (let dx = 0; dx < width; dx++) {
-                const cellSlot = (startY + dy) * GRID_WIDTH + (startX + dx);
-                occupiedMap.set(cellSlot, slot);
-            }
-        }
-    });
-    
-    // Рендерим предметы
     inventory.main.forEach((item, slot) => {
         if (!item) return;
         
@@ -217,7 +191,6 @@ function renderInventory() {
         const startX = slot % GRID_WIDTH;
         const startY = Math.floor(slot / GRID_WIDTH);
         
-        // Создаём элемент предмета
         const itemEl = document.createElement('div');
         itemEl.className = `inventory-item size-${width}x${height} type-${item.type || 'default'}`;
         itemEl.dataset.slot = slot;
@@ -225,14 +198,12 @@ function renderInventory() {
         itemEl.dataset.height = height;
         itemEl.draggable = true;
         
-        // Позиционирование
         itemEl.style.position = 'absolute';
         itemEl.style.left = `${startX * (CELL_SIZE + CELL_GAP) + 5}px`;
         itemEl.style.top = `${startY * (CELL_SIZE + CELL_GAP) + 5}px`;
         itemEl.style.width = `${width * CELL_SIZE + (width - 1) * CELL_GAP}px`;
         itemEl.style.height = `${height * CELL_SIZE + (height - 1) * CELL_GAP}px`;
         
-        // Контейнер для иконки
         const iconContainer = document.createElement('div');
         iconContainer.className = 'item-icon-container';
         
@@ -242,11 +213,9 @@ function renderInventory() {
             img.src = `icons/${item.icon}`;
             img.alt = item.name;
             img.draggable = false;
-            
             img.onerror = () => {
                 iconContainer.innerHTML = `<div class="item-emoji-icon">${getItemIcon(item.id)}</div>`;
             };
-            
             iconContainer.appendChild(img);
         } else {
             iconContainer.innerHTML = `<div class="item-emoji-icon">${getItemIcon(item.id)}</div>`;
@@ -254,7 +223,6 @@ function renderInventory() {
         
         itemEl.appendChild(iconContainer);
         
-        // Информация
         const infoEl = document.createElement('div');
         infoEl.className = 'item-info';
         
@@ -272,7 +240,6 @@ function renderInventory() {
         
         itemEl.appendChild(infoEl);
         
-        // События
         itemEl.addEventListener('dragstart', (e) => handleItemDragStart(e, item, slot));
         itemEl.addEventListener('dragend', handleItemDragEnd);
         itemEl.addEventListener('dblclick', () => handleItemDoubleClick(item, slot));
@@ -282,7 +249,6 @@ function renderInventory() {
         
         grid.appendChild(itemEl);
         
-        // Помечаем занятые ячейки
         for (let dy = 0; dy < height; dy++) {
             for (let dx = 0; dx < width; dx++) {
                 if (dx !== 0 || dy !== 0) {
@@ -296,9 +262,11 @@ function renderInventory() {
     
     updateWeight();
     renderEquipment();
+	renderQuickSlots();
 }
 
-// ===== РЕНДЕР ЭКИПИРОВКИ =====
+// ===== РЕНДЕР ЭКИПИРОВКИ (ИСПРАВЛЕННЫЙ) =====
+// ===== РЕНДЕР ЭКИПИРОВКИ (ИСПРАВЛЕННЫЙ) =====
 function renderEquipment() {
     const equipmentSlots = document.querySelectorAll('.equipment-slot[data-slot]');
     
@@ -306,47 +274,62 @@ function renderEquipment() {
         const slotType = slot.dataset.slot;
         const item = inventory.equipment[slotType];
         
-        // Полностью очищаем слот от добавленных элементов
-        slot.querySelectorAll('.item-icon-container, .equipped-name').forEach(el => el.remove());
+        // Удаляем ТОЛЬКО добавленные нами элементы
+        slot.querySelectorAll('.equip-item-container, .equip-item-name').forEach(el => el.remove());
         
-        slot.classList.remove('has-item', 'item-type-weapon', 'item-type-clothing');
+        // Находим оригинальные элементы слота (иконка FontAwesome и лейбл)
+        const slotIcon = slot.querySelector(':scope > i');
+        const slotLabel = slot.querySelector(':scope > .slot-label');
+        
+        // Сбрасываем классы
+        slot.classList.remove('has-item', 'item-type-weapon', 'item-type-clothing', 'item-type-medical', 'item-type-tool');
         slot.draggable = false;
+        
+        // Показываем оригинальные элементы по умолчанию
+        if (slotIcon) slotIcon.style.display = '';
+        if (slotLabel) slotLabel.style.display = '';
         
         if (item) {
             slot.classList.add('has-item');
             slot.draggable = true;
             
-            if (item.type) {
-                slot.classList.add(`item-type-${item.type}`);
-            }
+            if (item.type) slot.classList.add(`item-type-${item.type}`);
             
-            // Контейнер для иконки (БЕЗ класса equip-icon)
+            // Скрываем оригинальные иконку и лейбл
+            if (slotIcon) slotIcon.style.display = 'none';
+            if (slotLabel) slotLabel.style.display = 'none';
+            
+            // Создаём контейнер для иконки предмета
             const iconContainer = document.createElement('div');
-            iconContainer.className = 'item-icon-container';
+            iconContainer.className = 'equip-item-container';
             
             if (item.icon) {
                 const img = document.createElement('img');
-                img.className = 'item-image';
                 img.src = `icons/${item.icon}`;
                 img.alt = item.name;
                 img.draggable = false;
-                
                 img.onerror = () => {
-                    iconContainer.innerHTML = `<div class="item-emoji-icon">${getItemIcon(item.id || item.name)}</div>`;
+                    img.style.display = 'none';
+                    const emoji = document.createElement('span');
+                    emoji.className = 'equip-emoji';
+                    emoji.textContent = getItemIcon(item.id || item.name);
+                    iconContainer.appendChild(emoji);
                 };
-                
                 iconContainer.appendChild(img);
             } else {
-                iconContainer.innerHTML = `<div class="item-emoji-icon">${getItemIcon(item.id || item.name)}</div>`;
+                const emoji = document.createElement('span');
+                emoji.className = 'equip-emoji';
+                emoji.textContent = getItemIcon(item.id || item.name);
+                iconContainer.appendChild(emoji);
             }
             
             slot.appendChild(iconContainer);
             
-            // Название
-            const name = document.createElement('div');
-            name.className = 'equipped-name';
-            name.textContent = item.name || item.id;
-            slot.appendChild(name);
+            // Создаём название предмета
+            const nameEl = document.createElement('div');
+            nameEl.className = 'equip-item-name';
+            nameEl.textContent = item.name || item.id;
+            slot.appendChild(nameEl);
         }
     });
 }
@@ -358,9 +341,7 @@ function getItemIcon(itemId) {
     
     const itemIdLower = itemId.toLowerCase();
     for (const [key, icon] of Object.entries(itemIcons)) {
-        if (itemIdLower.includes(key) || key.includes(itemIdLower)) {
-            return icon;
-        }
+        if (itemIdLower.includes(key) || key.includes(itemIdLower)) return icon;
     }
     return itemIcons['default'];
 }
@@ -398,9 +379,7 @@ function handleCellDragOver(e) {
     highlightCells(targetX, targetY, draggedWidth, draggedHeight, canPlace);
 }
 
-function handleCellDragLeave(e) {
-    // Не очищаем сразу, чтобы избежать мерцания
-}
+function handleCellDragLeave(e) {}
 
 function handleCellDrop(e) {
     e.preventDefault();
@@ -429,15 +408,9 @@ function handleCellDrop(e) {
 }
 
 function checkCanPlace(startX, startY, width, height, ignoreSlot = -1) {
-    // Проверяем границы
-    if (startX + width > GRID_WIDTH || startY + height > GRID_HEIGHT) {
-        return false;
-    }
-    if (startX < 0 || startY < 0) {
-        return false;
-    }
+    if (startX + width > GRID_WIDTH || startY + height > GRID_HEIGHT) return false;
+    if (startX < 0 || startY < 0) return false;
     
-    // Координаты игнорируемого предмета
     const ignoreX = ignoreSlot >= 0 ? ignoreSlot % GRID_WIDTH : -1;
     const ignoreY = ignoreSlot >= 0 ? Math.floor(ignoreSlot / GRID_WIDTH) : -1;
     
@@ -447,23 +420,13 @@ function checkCanPlace(startX, startY, width, height, ignoreSlot = -1) {
             const checkY = startY + dy;
             const slot = checkY * GRID_WIDTH + checkX;
             
-            // Проверяем не является ли ячейка частью перетаскиваемого предмета
-            if (ignoreSlot >= 0) {
-                if (checkX >= ignoreX && checkX < ignoreX + draggedWidth &&
-                    checkY >= ignoreY && checkY < ignoreY + draggedHeight) {
-                    continue;
-                }
-            }
+            if (ignoreSlot >= 0 && checkX >= ignoreX && checkX < ignoreX + draggedWidth &&
+                checkY >= ignoreY && checkY < ignoreY + draggedHeight) continue;
             
-            // Проверяем есть ли предмет в этом слоте
-            if (inventory.main[slot] && slot !== ignoreSlot) {
-                return false;
-            }
+            if (inventory.main[slot] && slot !== ignoreSlot) return false;
             
-            // Проверяем занятость ячейки (часть большого предмета)
             const cell = document.querySelector(`.inventory-cell[data-slot="${slot}"]`);
             if (cell && cell.classList.contains('occupied')) {
-                // Дополнительно проверяем, не ча��ть ли это нашего предмета
                 let isOurCell = false;
                 if (ignoreSlot >= 0) {
                     const item = inventory.main[ignoreSlot];
@@ -471,35 +434,26 @@ function checkCanPlace(startX, startY, width, height, ignoreSlot = -1) {
                         const itemWidth = item.width || 1;
                         const itemHeight = item.height || 1;
                         if (checkX >= ignoreX && checkX < ignoreX + itemWidth &&
-                            checkY >= ignoreY && checkY < ignoreY + itemHeight) {
-                            isOurCell = true;
-                        }
+                            checkY >= ignoreY && checkY < ignoreY + itemHeight) isOurCell = true;
                     }
                 }
-                if (!isOurCell) {
-                    return false;
-                }
+                if (!isOurCell) return false;
             }
         }
     }
-    
     return true;
 }
 
 function highlightCells(startX, startY, width, height, isValid) {
     clearHighlights();
-    
     for (let dy = 0; dy < height; dy++) {
         for (let dx = 0; dx < width; dx++) {
             const x = startX + dx;
             const y = startY + dy;
-            
             if (x < GRID_WIDTH && y < GRID_HEIGHT && x >= 0 && y >= 0) {
                 const slot = y * GRID_WIDTH + x;
                 const cell = document.querySelector(`.inventory-cell[data-slot="${slot}"]`);
-                if (cell) {
-                    cell.classList.add(isValid ? 'drag-over' : 'drag-invalid');
-                }
+                if (cell) cell.classList.add(isValid ? 'drag-over' : 'drag-invalid');
             }
         }
     }
@@ -518,13 +472,9 @@ function clearHighlights() {
 function handleEquipDragOver(e) {
     e.preventDefault();
     if (!draggedItem) return;
-    
     const slot = e.currentTarget;
     const slotType = slot.dataset.slot;
-    
-    if (canEquipToSlot(draggedItem, slotType)) {
-        slot.classList.add('drag-over');
-    }
+    if (canEquipToSlot(draggedItem, slotType)) slot.classList.add('drag-over');
 }
 
 function handleEquipDragLeave(e) {
@@ -598,18 +548,11 @@ function canEquipToSlot(item, slotType) {
 // ===== ДВОЙНОЙ КЛИК =====
 function handleItemDoubleClick(item, slot) {
     if (!item) return;
+    if (typeof mp !== 'undefined') mp.trigger('cef:useItem', slot);
     
-    if (typeof mp !== 'undefined') {
-        mp.trigger('cef:useItem', slot);
-    }
-    
-    if (item.type === 'clothing') {
-        showNotification('info', `Надеваем: ${item.name}`);
-    } else if (item.type === 'weapon') {
-        showNotification('info', `Экипируем: ${item.name}`);
-    } else {
-        showNotification('success', `Использован: ${item.name}`);
-    }
+    if (item.type === 'clothing') showNotification('info', `Надеваем: ${item.name}`);
+    else if (item.type === 'weapon') showNotification('info', `Экипируем: ${item.name}`);
+    else showNotification('success', `Использован: ${item.name}`);
 }
 
 function handleEquipmentDoubleClick(e) {
@@ -618,10 +561,7 @@ function handleEquipmentDoubleClick(e) {
     const item = inventory.equipment[slotType];
     
     if (!item) return;
-    
-    if (typeof mp !== 'undefined') {
-        mp.trigger('cef:unequipItem', slotType);
-    }
+    if (typeof mp !== 'undefined') mp.trigger('cef:unequipItem', slotType);
     showNotification('info', `Снимаем: ${item.name}`);
 }
 
@@ -687,22 +627,15 @@ function showEquipmentContextMenu(x, y, item, slotType) {
     newMenu.querySelectorAll('.context-item').forEach(menuItem => {
         menuItem.addEventListener('click', () => {
             const action = menuItem.dataset.action;
-            
             if (action === 'unequip') {
-                if (typeof mp !== 'undefined') {
-                    mp.trigger('cef:unequipItem', slotType);
-                }
+                if (typeof mp !== 'undefined') mp.trigger('cef:unequipItem', slotType);
                 showNotification('info', `Снято: ${item.name}`);
             } else if (action === 'drop') {
-                // Выбрасываем экипировку
-                if (typeof mp !== 'undefined') {
-                    mp.trigger('cef:dropEquipment', slotType);
-                }
+                if (typeof mp !== 'undefined') mp.trigger('cef:dropEquipment', slotType);
                 showNotification('info', `Выброшено: ${item.name}`);
             } else if (action === 'info') {
                 alert(`${item.name}\nТип: ${item.type}\nВес: ${item.weight || 0.1} кг`);
             }
-            
             newMenu.style.display = 'none';
         });
     });
@@ -717,9 +650,7 @@ function showEquipmentContextMenu(x, y, item, slotType) {
 function handleContextAction(action, item, location) {
     switch (action) {
         case 'use':
-            if (typeof mp !== 'undefined') {
-                mp.trigger('cef:useItem', location.index);
-            }
+            if (typeof mp !== 'undefined') mp.trigger('cef:useItem', location.index);
             showNotification('success', `Использован: ${item.name}`);
             break;
         case 'drop':
@@ -728,15 +659,11 @@ function handleContextAction(action, item, location) {
                 const amount = prompt(`Сколько выбросить? (1-${qty})`, '1');
                 if (amount && !isNaN(amount)) {
                     const dropAmount = Math.min(Math.max(1, parseInt(amount)), qty);
-                    if (typeof mp !== 'undefined') {
-                        mp.trigger('cef:dropItem', location.index, dropAmount);
-                    }
+                    if (typeof mp !== 'undefined') mp.trigger('cef:dropItem', location.index, dropAmount);
                     showNotification('info', `Выброшено: ${item.name} x${dropAmount}`);
                 }
             } else {
-                if (typeof mp !== 'undefined') {
-                    mp.trigger('cef:dropItem', location.index, 1);
-                }
+                if (typeof mp !== 'undefined') mp.trigger('cef:dropItem', location.index, 1);
                 showNotification('info', `Выброшено: ${item.name}`);
             }
             break;
@@ -744,11 +671,11 @@ function handleContextAction(action, item, location) {
             if (item.quantity > 1) {
                 const splitAmount = prompt(`Разделить (макс: ${item.quantity - 1}):`, Math.floor(item.quantity / 2));
                 if (splitAmount && !isNaN(splitAmount) && parseInt(splitAmount) > 0 && parseInt(splitAmount) < item.quantity) {
-                    if (typeof mp !== 'undefined') {
-                        mp.trigger('cef:splitItem', location.index, parseInt(splitAmount));
-                    }
+                    if (typeof mp !== 'undefined') mp.trigger('cef:splitItem', location.index, parseInt(splitAmount));
                     showNotification('success', 'Предмет разделён');
                 }
+            } else {
+                showNotification('error', 'Нельзя разделить один предмет');
             }
             break;
         case 'info':
@@ -762,16 +689,10 @@ function showItemTooltip(e, item) {
     const tooltip = document.getElementById('itemTooltip');
     if (!tooltip) return;
     
-    const tooltipName = document.getElementById('tooltipName');
-    const tooltipWeight = document.getElementById('tooltipWeight');
-    const tooltipDescription = document.getElementById('tooltipDescription');
-    
-    if (tooltipName) tooltipName.textContent = item.name || item.id;
-    if (tooltipWeight) tooltipWeight.textContent = `${item.weight || 0.1} kg`;
-    if (tooltipDescription) {
-        const size = `${item.width || 1}x${item.height || 1}`;
-        tooltipDescription.textContent = `Тип: ${item.type || 'Неизвестно'} | Размер: ${size}${item.quantity > 1 ? ` | Кол-во: ${item.quantity}` : ''}`;
-    }
+    document.getElementById('tooltipName').textContent = item.name || item.id;
+    document.getElementById('tooltipWeight').textContent = `${item.weight || 0.1} kg`;
+    const size = `${item.width || 1}x${item.height || 1}`;
+    document.getElementById('tooltipDescription').textContent = `Тип: ${item.type || 'Неизвестно'} | Размер: ${size}${item.quantity > 1 ? ` | Кол-во: ${item.quantity}` : ''}`;
     
     tooltip.style.display = 'block';
     tooltip.style.left = `${e.clientX + 15}px`;
@@ -796,9 +717,7 @@ function handleMouseLeave() {
 
 // ===== БЫСТРЫЕ СЛОТЫ =====
 function useQuickSlot(index) {
-    if (typeof mp !== 'undefined') {
-        mp.trigger('cef:useQuickSlot', index);
-    }
+    if (typeof mp !== 'undefined') mp.trigger('cef:useQuickSlot', index);
 }
 
 // ===== ВЕС =====
@@ -884,7 +803,6 @@ function loadInventory(inventoryJson, charDataJson) {
         const invData = typeof inventoryJson === 'string' ? JSON.parse(inventoryJson) : inventoryJson;
         const charData = charDataJson ? (typeof charDataJson === 'string' ? JSON.parse(charDataJson) : charDataJson) : null;
         
-        // Очищаем инвентарь
         inventory.main = [];
         inventory.equipment = {
             head: null, mask: null, top: null, undershirt: null, legs: null,
@@ -912,12 +830,16 @@ function loadInventory(inventoryJson, charDataJson) {
                         inventory.equipment[slotType] = item || null;
                     }
                 }
+                // Загружаем быстрые слоты
+                if (invData.quickSlots) {
+                    quickSlotsData = invData.quickSlots;
+                }
             }
         }
         
         if (charData) updatePlayerInfo(charData);
         renderInventory();
-        
+        renderQuickSlots();
     } catch (err) {
         console.error('[Inventory] Ошибка загрузки:', err);
     }
@@ -951,9 +873,9 @@ function renderGroundItems() {
         slot.className = 'ground-item-slot';
         slot.dataset.groundItemId = item.id;
         
-        // Контейнер для иконки
         const iconContainer = document.createElement('div');
         iconContainer.className = 'item-icon-container';
+        iconContainer.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;';
         
         if (item.icon) {
             const img = document.createElement('img');
@@ -961,13 +883,10 @@ function renderGroundItems() {
             img.src = `icons/${item.icon}`;
             img.alt = item.name;
             img.draggable = false;
-            img.style.maxWidth = '35px';
-            img.style.maxHeight = '35px';
-            
+            img.style.cssText = 'max-width:35px;max-height:35px;';
             img.onerror = () => {
                 iconContainer.innerHTML = `<div class="item-icon">${getItemIcon(item.name)}</div>`;
             };
-            
             iconContainer.appendChild(img);
         } else {
             iconContainer.innerHTML = `<div class="item-icon">${getItemIcon(item.name)}</div>`;
@@ -975,7 +894,6 @@ function renderGroundItems() {
         
         slot.appendChild(iconContainer);
         
-        // Количество
         if (item.quantity > 1) {
             const quantity = document.createElement('div');
             quantity.className = 'item-quantity';
@@ -983,7 +901,6 @@ function renderGroundItems() {
             slot.appendChild(quantity);
         }
         
-        // Расстояние
         if (item.distance !== undefined) {
             const distance = document.createElement('div');
             distance.className = 'item-distance';
@@ -992,9 +909,7 @@ function renderGroundItems() {
         }
         
         slot.addEventListener('click', () => {
-            if (typeof mp !== 'undefined') {
-                mp.trigger('cef:pickupItem', item.id);
-            }
+            if (typeof mp !== 'undefined') mp.trigger('cef:pickupItem', item.id);
             showNotification('info', 'Подбираем предмет...');
         });
         
@@ -1005,122 +920,152 @@ function renderGroundItems() {
     });
 }
 
+// ===== РЕНДЕР БЫСТРЫХ СЛОТОВ =====
+function renderQuickSlots() {
+    const container = document.getElementById('quickSlots');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    for (let i = 0; i < 5; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'quick-slot';
+        slot.dataset.index = i;
+        
+        const item = quickSlotsData[i];
+        
+        if (item) {
+            slot.classList.add('has-item');
+            
+            // Иконка предмета
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'quick-slot-icon';
+            
+            if (item.icon) {
+                const img = document.createElement('img');
+                img.src = `icons/${item.icon}`;
+                img.alt = item.name;
+                img.draggable = false;
+                img.onerror = () => {
+                    iconContainer.innerHTML = `<span class="quick-emoji">${getItemIcon(item.id || item.name)}</span>`;
+                };
+                iconContainer.appendChild(img);
+            } else {
+                iconContainer.innerHTML = `<span class="quick-emoji">${getItemIcon(item.id || item.name)}</span>`;
+            }
+            
+            slot.appendChild(iconContainer);
+        }
+        
+        // Номер слота
+        const number = document.createElement('div');
+        number.className = 'quick-slot-number';
+        number.textContent = i + 1;
+        slot.appendChild(number);
+        
+        // Клик - использовать
+        slot.addEventListener('click', () => {
+            if (quickSlotsData[i]) {
+                if (typeof mp !== 'undefined') mp.trigger('cef:useQuickSlot', i);
+                showNotification('info', `Используем: ${quickSlotsData[i].name}`);
+            }
+        });
+        
+        // ПКМ - очистить слот
+        slot.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (quickSlotsData[i]) {
+                showQuickSlotContextMenu(e.clientX, e.clientY, i);
+            }
+        });
+        
+        // Drag & Drop - назначение предмета
+        slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (draggedItem && canAssignToQuickSlot(draggedItem)) {
+                slot.classList.add('drag-over');
+            }
+        });
+        
+        slot.addEventListener('dragleave', () => {
+            slot.classList.remove('drag-over');
+        });
+        
+        slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            
+            if (draggedItem && draggedFromSlot !== null && typeof draggedFromSlot === 'number') {
+                if (canAssignToQuickSlot(draggedItem)) {
+                    if (typeof mp !== 'undefined') {
+                        mp.trigger('cef:assignQuickSlot', draggedFromSlot, i);
+                    }
+                    showNotification('success', `${draggedItem.name} назначен на слот ${i + 1}`);
+                } else {
+                    showNotification('error', 'Этот предмет нельзя назначить на быстрый слот');
+                }
+            }
+        });
+        
+        container.appendChild(slot);
+    }
+}
+
+// Проверка можно ли назначить на быстрый слот
+function canAssignToQuickSlot(item) {
+    if (!item) return false;
+    const allowedTypes = ['consumable', 'medical', 'weapon', 'tool'];
+    return allowedTypes.includes(item.type) || item.usable;
+}
+
+// Контекстное меню быстрого слота
+function showQuickSlotContextMenu(x, y, slotIndex) {
+    const menu = document.getElementById('contextMenu');
+    if (!menu) return;
+    
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.display = 'block';
+    
+    const newMenu = menu.cloneNode(true);
+    menu.parentNode.replaceChild(newMenu, menu);
+    
+    newMenu.innerHTML = `
+        <div class="context-item" data-action="use"><i class="fas fa-hand-pointer"></i><span>Использовать</span></div>
+        <div class="context-item" data-action="clear"><i class="fas fa-times"></i><span>Очистить слот</span></div>
+    `;
+    
+    newMenu.querySelectorAll('.context-item').forEach(menuItem => {
+        menuItem.addEventListener('click', () => {
+            const action = menuItem.dataset.action;
+            if (action === 'use') {
+                if (typeof mp !== 'undefined') mp.trigger('cef:useQuickSlot', slotIndex);
+            } else if (action === 'clear') {
+                if (typeof mp !== 'undefined') mp.trigger('cef:clearQuickSlot', slotIndex);
+                showNotification('info', `Слот ${slotIndex + 1} очищен`);
+            }
+            newMenu.style.display = 'none';
+        });
+    });
+    
+    setTimeout(() => {
+        document.addEventListener('click', () => {
+            newMenu.style.display = 'none';
+        }, { once: true });
+    }, 100);
+}
+
 // ===== ЭКСПОРТ =====
 window.loadInventory = loadInventory;
 window.updatePlayerInfo = updatePlayerInfo;
 window.renderInventory = renderInventory;
 window.updateGroundItems = updateGroundItems;
 
-// ===== СТИЛИ =====
+// ===== СТИЛИ АНИМАЦИЙ =====
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-    
-    .inventory-cell {
-        width: ${CELL_SIZE}px;
-        height: ${CELL_SIZE}px;
-        background: rgba(0,0,0,0.5);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-    .inventory-cell:hover { border-color: rgba(255,255,255,0.3); }
-    .inventory-cell.occupied { pointer-events: none; background: transparent; border: none; }
-    .inventory-cell.drag-over { background: rgba(76,175,80,0.4) !important; border-color: #4caf50 !important; }
-    .inventory-cell.drag-invalid { background: rgba(244,67,54,0.4) !important; border-color: #f44336 !important; }
-    
-    .inventory-item {
-        position: absolute;
-        background: linear-gradient(135deg, rgba(60,60,60,0.95), rgba(40,40,40,0.95));
-        border: 2px solid rgba(255,255,255,0.25);
-        border-radius: 6px;
-        cursor: grab;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        box-sizing: border-box;
-    }
-    .inventory-item:hover { border-color: #4caf50; transform: scale(1.02); z-index: 20; box-shadow: 0 4px 15px rgba(76,175,80,0.3); }
-    .inventory-item.dragging { opacity: 0.5; cursor: grabbing; z-index: 100; }
-    
-    .inventory-item.size-1x1 { width: ${CELL_SIZE}px; height: ${CELL_SIZE}px; }
-    .inventory-item.size-2x1 { width: ${CELL_SIZE * 2 + CELL_GAP}px; height: ${CELL_SIZE}px; }
-    .inventory-item.size-1x2 { width: ${CELL_SIZE}px; height: ${CELL_SIZE * 2 + CELL_GAP}px; }
-    .inventory-item.size-2x2 { width: ${CELL_SIZE * 2 + CELL_GAP}px; height: ${CELL_SIZE * 2 + CELL_GAP}px; }
-    .inventory-item.size-3x1 { width: ${CELL_SIZE * 3 + CELL_GAP * 2}px; height: ${CELL_SIZE}px; }
-    .inventory-item.size-3x2 { width: ${CELL_SIZE * 3 + CELL_GAP * 2}px; height: ${CELL_SIZE * 2 + CELL_GAP}px; }
-    .inventory-item.size-4x1 { width: ${CELL_SIZE * 4 + CELL_GAP * 3}px; height: ${CELL_SIZE}px; }
-    .inventory-item.size-4x2 { width: ${CELL_SIZE * 4 + CELL_GAP * 3}px; height: ${CELL_SIZE * 2 + CELL_GAP}px; }
-    
-    .inventory-item.type-weapon { border-color: #f44336; background: linear-gradient(135deg, rgba(244,67,54,0.25), rgba(40,40,40,0.95)); }
-    .inventory-item.type-clothing { border-color: #2196f3; background: linear-gradient(135deg, rgba(33,150,243,0.25), rgba(40,40,40,0.95)); }
-    .inventory-item.type-consumable { border-color: #4caf50; background: linear-gradient(135deg, rgba(76,175,80,0.25), rgba(40,40,40,0.95)); }
-    .inventory-item.type-medical { border-color: #e91e63; background: linear-gradient(135deg, rgba(233,30,99,0.25), rgba(40,40,40,0.95)); }
-    .inventory-item.type-tool { border-color: #ff9800; background: linear-gradient(135deg, rgba(255,152,0,0.25), rgba(40,40,40,0.95)); }
-    
-    .item-icon-container { display: flex; align-items: center; justify-content: center; width: 100%; height: 70%; padding: 2px; }
-    .item-image { max-width: 90%; max-height: 90%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-    .item-emoji-icon { text-align: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-    
-    .inventory-item.size-1x1 .item-emoji-icon { font-size: 22px; }
-    .inventory-item.size-2x1 .item-emoji-icon, .inventory-item.size-2x2 .item-emoji-icon { font-size: 30px; }
-    .inventory-item.size-3x1 .item-emoji-icon, .inventory-item.size-3x2 .item-emoji-icon { font-size: 38px; }
-    .inventory-item.size-4x1 .item-emoji-icon, .inventory-item.size-4x2 .item-emoji-icon { font-size: 44px; }
-    
-    .item-info { position: absolute; bottom: 2px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 4px; }
-    .item-quantity { background: rgba(0,0,0,0.75); padding: 1px 5px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 11px; }
-    .item-weight-badge { background: rgba(0,0,0,0.75); padding: 1px 4px; border-radius: 3px; color: #aaa; font-size: 9px; }
-    
-    /* ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ ЭКИПИРОВКИ */
-    .equipment-slot { position: relative; }
-    .equipment-slot.has-item { background: rgba(76,175,80,0.25) !important; border-color: rgba(76,175,80,0.6) !important; }
-    .equipment-slot.item-type-weapon { border-color: rgba(244,67,54,0.6) !important; background: rgba(244,67,54,0.15) !important; }
-    .equipment-slot.drag-over { background: rgba(76,175,80,0.4) !important; border-color: #4caf50 !important; }
-    
-    .equipment-slot .item-icon-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 50px;
-    }
-    .equipment-slot .item-image {
-        max-width: 45px;
-        max-height: 45px;
-        object-fit: contain;
-    }
-    .equipment-slot .item-emoji-icon {
-        font-size: 28px;
-    }
-    
-    .equipped-name {
-        position: absolute;
-        bottom: 2px;
-        left: 0;
-        right: 0;
-        font-size: 9px;
-        text-align: center;
-        color: rgba(255,255,255,0.8);
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-        padding: 0 2px;
-        background: rgba(0,0,0,0.5);
-        border-radius: 0 0 4px 4px;
-    }
-    
-    .ground-item-slot { width: 55px; height: 55px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; margin: 3px; transition: all 0.2s; }
-    .ground-item-slot:hover { border-color: #4caf50; background: rgba(76,175,80,0.3); transform: scale(1.05); }
-    .ground-item-slot .item-icon { font-size: 22px; }
-    .ground-item-slot .item-quantity { position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 3px; font-size: 10px; color: #fff; font-weight: bold; }
-    .item-distance { position: absolute; top: 2px; left: 2px; font-size: 8px; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.6); padding: 1px 3px; border-radius: 3px; }
-    .no-items-hint { color: rgba(255,255,255,0.4); font-size: 12px; padding: 20px; text-align: center; grid-column: 1 / -1; }
-    
-    .drop-hover { border-color: #f44336 !important; background: rgba(244,67,54,0.2) !important; box-shadow: inset 0 0 20px rgba(244,67,54,0.3); }
 `;
 document.head.appendChild(style);
 

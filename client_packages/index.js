@@ -1404,7 +1404,67 @@ mp.events.add('cef:moveItem', (fromSlot, toSlot) => {
 
 // Разделение предмета
 mp.events.add('cef:splitItem', (slot, quantity) => {
-    mp.events.callRemote('inventory:splitItem', slot, quantity);
+    mp.events.callRemote('inventory:splitItem', parseInt(slot), parseInt(quantity));
+});
+
+// ===== БЫСТРЫЕ СЛОТЫ =====
+
+// Назначение на быстрый слот
+mp.events.add('cef:assignQuickSlot', (inventorySlot, quickSlotIndex) => {
+    mp.events.callRemote('inventory:assignQuickSlot', inventorySlot, quickSlotIndex);
+});
+
+// Очистка быстрого слота
+mp.events.add('cef:clearQuickSlot', (quickSlotIndex) => {
+    mp.events.callRemote('inventory:clearQuickSlot', quickSlotIndex);
+});
+
+// Использование быстрого слота (из CEF или по нажатию клавиши)
+mp.events.add('cef:useQuickSlot', (quickSlotIndex) => {
+    mp.events.callRemote('inventory:useQuickSlot', quickSlotIndex);
+});
+
+// Отключение радиального меню GTA
+mp.game.controls.disableControlAction(0, 37, true); // Weapon Wheel
+
+// Обработка клавиш 1-5 для быстрых слотов (вне инвентаря)
+let inventoryOpen = false;
+
+mp.events.add('client:inventoryOpened', () => {
+    inventoryOpen = true;
+});
+
+mp.events.add('client:inventoryClosed', () => {
+    inventoryOpen = false;
+});
+
+// Постоянно отключаем радиальное меню
+mp.events.add('render', () => {
+    // Отключаем колесо оружия
+    mp.game.controls.disableControlAction(0, 37, true);
+    mp.game.controls.disableControlAction(0, 157, true);
+    mp.game.controls.disableControlAction(0, 158, true);
+    mp.game.controls.disableControlAction(0, 159, true);
+    mp.game.controls.disableControlAction(0, 160, true);
+    mp.game.controls.disableControlAction(0, 161, true);
+    mp.game.controls.disableControlAction(0, 162, true);
+});
+
+// Обработка нажатий 1-5 вне инвентаря
+mp.keys.bind(0x31, false, () => { // 1
+    if (!inventoryOpen) mp.events.callRemote('inventory:useQuickSlot', 0);
+});
+mp.keys.bind(0x32, false, () => { // 2
+    if (!inventoryOpen) mp.events.callRemote('inventory:useQuickSlot', 1);
+});
+mp.keys.bind(0x33, false, () => { // 3
+    if (!inventoryOpen) mp.events.callRemote('inventory:useQuickSlot', 2);
+});
+mp.keys.bind(0x34, false, () => { // 4
+    if (!inventoryOpen) mp.events.callRemote('inventory:useQuickSlot', 3);
+});
+mp.keys.bind(0x35, false, () => { // 5
+    if (!inventoryOpen) mp.events.callRemote('inventory:useQuickSlot', 4);
 });
 
 mp.gui.chat.push('!{#4caf50}[Inventory] ✅ Система инвентаря загружена');
@@ -1825,6 +1885,61 @@ setInterval(() => {
         mp.events.callRemote('inventory:requestGroundItems');
     }
 }, 5000);
+
+// ===== СИСТЕМА ВЫЖИВАНИЯ - КЛИЕНТ =====
+
+let survivalStats = {
+    hunger: 100,
+    thirst: 100,
+    health: 100
+};
+
+// Получение обновления статов с сервера
+mp.events.add('client:updateSurvivalStats', (hunger, thirst, health) => {
+    survivalStats.hunger = hunger;
+    survivalStats.thirst = thirst;
+    survivalStats.health = health;
+    
+    // Обновляем CEF если инвентарь открыт
+    if (inventoryBrowser) {
+        inventoryBrowser.execute(`
+            if (typeof updateSurvivalStats === 'function') {
+                updateSurvivalStats(${hunger}, ${thirst}, ${health});
+            }
+        `);
+    }
+    
+    // Визуальные эффекты при критических значениях
+    applyVisualEffects();
+});
+
+// Визуальные эффекты
+function applyVisualEffects() {
+    const player = mp.players.local;
+    
+    // Эффект при низком здоровье
+    if (survivalStats.health <= 25) {
+        mp.game.graphics.startScreenEffect('DeathFailOut', 0, true);
+    } else {
+        mp.game.graphics.stopScreenEffect('DeathFailOut');
+    }
+    
+    // Эффект при голоде/жажде
+    if (survivalStats.hunger <= 10 || survivalStats.thirst <= 10) {
+        // Размытие экрана
+        mp.game.graphics.startScreenEffect('DrugsMichaelAliensFight', 0, true);
+    } else if (survivalStats.hunger <= 25 || survivalStats.thirst <= 25) {
+        mp.game.graphics.stopScreenEffect('DrugsMichaelAliensFight');
+        // Можно добавить лёгкий эффект
+    } else {
+        mp.game.graphics.stopScreenEffect('DrugsMichaelAliensFight');
+    }
+}
+
+// Запрос статов при спавне
+mp.events.add('playerSpawn', () => {
+    mp.events.callRemote('survival:requestStats');
+});
 
 console.log('[Inventory Client] ✅ Система предметов на земле загружена');
 console.log('[Inventory Client] ✅ Система сохранения одежды загружена');
