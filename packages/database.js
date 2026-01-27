@@ -1,5 +1,3 @@
-// ===== ОБЩИЙ МОДУЛЬ БАЗЫ ДАННЫХ =====
-
 require('dotenv').config();
 const mysql = require('mysql2/promise');
 
@@ -12,10 +10,6 @@ const db = mysql.createPool({
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
     queueLimit: 0
 });
-
-console.log('[Database] Попытка подключения к базе данных gtas_rp...');
-
-// Проверяем подключение
 db.getConnection()
     .then(connection => {
         console.log('[Database] ✅ База данных gtas_rp подключена успешно!');
@@ -26,5 +20,3 @@ db.getConnection()
     });
 
 module.exports = { db };
-
-console.log('[Database] ✅ Модуль базы данных экспортирован');
