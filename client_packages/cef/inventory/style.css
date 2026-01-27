@@ -11,344 +11,641 @@ body {
     color: white;
 }
 
-/* ===== КОНТЕЙНЕР ===== */
+/* ===== ГЛАВНЫЙ КОНТЕЙНЕР ===== */
 .inventory-container {
     width: 100vw;
     height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-/* ===== ЛЕВАЯ ПАНЕЛЬ: ИНФОРМАЦИЯ ===== */
-.info-panel {
-    width: 350px;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 15px;
-    padding: 25px;
-    display: flex;
     flex-direction: column;
-    gap: 20px;
-    backdrop-filter: blur(10px);
+    background: transparent;
+    animation: fadeIn 0.3s ease;
+    position: relative;
 }
 
-.character-info {
+/* ===== ШАПКА ===== */
+.inventory-header {
+    height: 50px;
+    background: rgba(10, 15, 25, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.header-section {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
 }
 
-.character-avatar {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-}
-
-.character-details h2 {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.character-details p {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.weight-info {
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-}
-
-.weight-bar {
-    width: 100%;
-    height: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 10px;
-}
-
-.weight-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
-    transition: width 0.3s ease;
-}
-
-.weight-fill.warning {
-    background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
-}
-
-.weight-fill.danger {
-    background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
-}
-
-.weight-text {
-    text-align: center;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-/* ===== ИНФОРМАЦИЯ О ВЫБРАННОМ ПРЕДМЕТЕ ===== */
-.selected-item-info {
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    animation: fadeIn 0.3s ease;
-}
-
-.item-preview {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 15px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-}
-
-.selected-item-info h3 {
-    font-size: 18px;
-    text-align: center;
-    margin-bottom: 5px;
-}
-
-.item-type {
-    text-align: center;
-    font-size: 12px;
-    color: #667eea;
-    margin-bottom: 10px;
-}
-
-.item-description {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.5;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.item-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-}
-
-.stat-row span:first-child {
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.item-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.action-btn {
+.header-section.center {
     flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 5px;
 }
 
-.use-btn {
-    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+.header-section.right {
+    gap: 20px;
+}
+
+.header-section h2 {
+    font-size: 20px;
+    font-weight: 600;
     color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.use-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+.header-section h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
 }
 
-.drop-btn {
-    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
-    color: white;
-}
-
-.drop-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
-}
-
-/* ===== ЦЕНТРАЛЬНАЯ ПАНЕЛЬ: ИНВЕНТАРЬ ===== */
-.inventory-panel {
-    width: 700px;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 15px;
-    padding: 25px;
-    backdrop-filter: blur(10px);
-}
-
-.panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
-}
-
-.panel-header h2 {
-    font-size: 22px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.weight {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .close-btn {
-    width: 35px;
-    height: 35px;
+    width: 32px;
+    height: 32px;
     background: rgba(244, 67, 54, 0.2);
-    border: 2px solid rgba(244, 67, 54, 0.3);
-    border-radius: 8px;
+    border: 2px solid rgba(244, 67, 54, 0.5);
+    border-radius: 6px;
     color: #f44336;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .close-btn:hover {
     background: rgba(244, 67, 54, 0.4);
+    border-color: #f44336;
     transform: scale(1.1);
 }
 
-/* ===== ХОТБАР ===== */
-.hotbar {
-    margin-bottom: 20px;
-}
-
-.hotbar-title {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 10px;
-}
-
-.hotbar-slots {
+/* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+.inventory-content {
+    flex: 1;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    max-height: 700px;
+    margin: auto;
+    overflow: visible;
 }
 
-/* ===== СЕТКА ИНВЕНТАРЯ ===== */
+/* ===== ПАНЕЛИ ===== */
+.inventory-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(15, 20, 30, 0.85);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    max-height: 650px;
+    overflow: hidden;
+}
+
+.left-panel {
+    width: 320px;
+}
+
+.center-panel {
+    background: rgba(15, 20, 30, 0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 20px 100px;
+    max-height: 650px;
+}
+
+.right-panel {
+    width: 320px;
+}
+
+/* ===== ЗАГОЛОВКИ СЕКЦИЙ ===== */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    margin-bottom: 6px;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.section-title i {
+    color: rgba(255, 193, 7, 0.8);
+    font-size: 13px;
+}
+
+.backpack-title {
+    margin-top: 12px;
+    display: none;
+}
+
+.backpack-title.active {
+    display: flex;
+}
+
+.backpack-status {
+    margin-left: auto;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+/* ===== СЕТКИ ИНВЕНТАРЯ ===== */
 .inventory-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
-    max-height: 500px;
+    gap: 4px;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.environment-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-height: 350px;
     overflow-y: auto;
 }
 
-/* ===== СЛОТ ===== */
+.backpack-grid {
+    grid-template-columns: repeat(4, 1fr);
+    height: auto;
+    display: none;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.backpack-grid.active {
+    display: grid;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.main-inventory {
+    grid-template-columns: repeat(5, 1fr);
+    flex: 1;
+    overflow-y: auto;
+    gap: 4px;
+    padding: 0;
+    max-height: 550px;
+}
+
+/* ===== СЛОТЫ ===== */
 .inventory-slot {
-    aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    width: 100%;
+    height: 68px;
+    min-height: 68px;
+    max-height: 68px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
     position: relative;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .inventory-slot:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(102, 126, 234, 0.5);
-    transform: translateY(-2px);
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.4);
+    transform: scale(1.03);
 }
 
-.inventory-slot.selected {
-    border-color: #667eea;
-    box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+.inventory-slot.has-item {
+    background: rgba(20, 25, 35, 0.8);
+    border-color: rgba(255, 193, 7, 0.3);
 }
 
 .inventory-slot.dragging {
     opacity: 0.5;
+    transform: scale(0.95);
 }
 
-.slot-number {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 600;
+.inventory-slot.drag-over {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.8);
+    border-width: 2px;
 }
 
+/* ===== ПРЕДМЕТЫ В СЛОТАХ ===== */
 .item-icon {
     font-size: 32px;
-    color: white;
+    opacity: 0.95;
 }
 
 .item-quantity {
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 2px 6px;
-    border-radius: 5px;
+    bottom: 3px;
+    right: 3px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 1px 5px;
+    border-radius: 3px;
     font-size: 11px;
     font-weight: 700;
+    color: white;
 }
 
-/* ===== ТИПЫ ПРЕДМЕТОВ (ЦВЕТА) ===== */
-.inventory-slot[data-type="weapon"] .item-icon { color: #f44336; }
-.inventory-slot[data-type="food"] .item-icon { color: #ff9800; }
-.inventory-slot[data-type="drink"] .item-icon { color: #2196f3; }
-.inventory-slot[data-type="medical"] .item-icon { color: #4caf50; }
-.inventory-slot[data-type="tool"] .item-icon { color: #9c27b0; }
-.inventory-slot[data-type="material"] .item-icon { color: #795548; }
-.inventory-slot[data-type="misc"] .item-icon { color: #9e9e9e; }
+.item-weight {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== СИЛУЭТ ПЕРСОНАЖА ===== */
+.character-preview {
+    width: 200px;
+    height: 380px;
+    margin: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.character-silhouette {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.1));
+    opacity: 0.3;
+}
+
+/* ===== СЛОТЫ ЭКИПИРОВКИ ===== */
+.equipment-slots {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.equipment-slot {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    pointer-events: all;
+}
+
+.equipment-slot:hover {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.6);
+    transform: scale(1.08);
+}
+
+.equipment-slot.has-item {
+    background: rgba(20, 25, 35, 0.9);
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+.equipment-slot i {
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.slot-label {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+/* ===== ПОЗИЦИОНИРОВАНИЕ СЛОТОВ ЭКИПИРОВКИ (РАЗДВИНУТЫ!) ===== */
+
+/* ЛЕВАЯ СТОРОНА */
+.equipment-slot[data-slot="mask"] {
+    top: 40px;
+    left: -85px;
+}
+
+.equipment-slot[data-slot="top"] {
+    top: 120px;
+    left: -85px;
+}
+
+.equipment-slot[data-slot="legs"] {
+    bottom: 130px;
+    left: -85px;
+}
+
+.equipment-slot[data-slot="shoes"] {
+    bottom: 50px;
+    left: -85px;
+}
+
+/* ПРАВАЯ СТОРОНА */
+.equipment-slot[data-slot="head"] {
+    top: 10px;
+    right: -85px;
+}
+
+.equipment-slot[data-slot="accessory"] {
+    top: 90px;
+    right: -85px;
+}
+
+.equipment-slot[data-slot="backpack"] {
+    top: 170px;
+    right: -85px;
+}
+
+/* ===== СЛОТЫ ОРУЖИЯ ===== */
+.weapon-slots {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+
+.weapon-slot {
+    position: static;
+    width: 70px;
+    height: 70px;
+    transform: none;
+}
+
+/* ===== ИНФОРМАЦИЯ О ПЕРСОНАЖЕ (УБИРАЕМ ИЗ ЦЕНТРА) ===== */
+.character-info {
+    display: none;
+}
+
+/* ===== СТАТЫ ВНИЗУ ЭКРАНА (НОВЫЙ БЛОК) ===== */
+.bottom-stats {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    z-index: 1000;
+}
+
+.money-display {
+    display: flex;
+    gap: 20px;
+    background: rgba(15, 20, 30, 0.85);
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.money-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.money-item i {
+    font-size: 16px;
+    color: rgba(255, 193, 7, 0.8);
+}
+
+/* ===== СТАТЫ ===== */
+.stats-bars {
+    display: flex;
+    gap: 15px;
+    background: rgba(15, 20, 30, 0.85);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-bar i {
+    font-size: 18px;
+}
+
+.stat-bar-bg {
+    width: 200px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.stat-bar-fill.thirst {
+    background: linear-gradient(90deg, #4fc3f7 0%, #03a9f4 100%);
+}
+
+.stat-bar-fill.hunger {
+    background: linear-gradient(90deg, #ffb74d 0%, #ff9800 100%);
+}
+
+.stat-bar-fill.health {
+    background: linear-gradient(90deg, #e57373 0%, #f44336 100%);
+}
+
+.stat-value {
+    min-width: 35px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== АКТИВНЫЕ ПРЕДМЕТЫ (ПОД СТАТАМИ) ===== */
+.active-items {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.active-items .section-title {
+    margin-bottom: 8px;
+    justify-content: center;
+}
+
+.quick-slots {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(15, 20, 30, 0.85);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quick-slot {
+    width: 70px;
+    height: 70px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-slot:hover {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+.quick-slot-number {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+/* ===== КОНТЕКСТНОЕ МЕНЮ ===== */
+.context-menu {
+    position: fixed;
+    background: rgba(20, 25, 35, 0.98);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    border-radius: 6px;
+    padding: 4px;
+    min-width: 170px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+}
+
+.context-item {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.context-item:hover {
+    background: rgba(255, 193, 7, 0.15);
+}
+
+.context-item i {
+    color: rgba(255, 193, 7, 0.8);
+    font-size: 14px;
+}
+
+/* ===== TOOLTIP ===== */
+.item-tooltip {
+    position: fixed;
+    max-width: 280px;
+    background: rgba(20, 25, 35, 0.98);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tooltip-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 193, 7, 0.9);
+}
+
+.tooltip-weight {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.tooltip-description {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
 
 /* ===== СКРОЛЛБАР ===== */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
+    background: rgba(255, 193, 7, 0.4);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 193, 7, 0.6);
 }
 
 /* ===== АНИМАЦИИ ===== */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

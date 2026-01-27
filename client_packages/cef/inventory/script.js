@@ -1,294 +1,800 @@
 // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-let inventory = [];
-let selectedSlot = null;
-let draggedSlot = null;
-let characterData = {
-    name: 'John Doe',
-    level: 1,
-    currentWeight: 0,
-    maxWeight: 50
+let playerData = {
+    name: 'Player',
+    cash: 0,
+    bank: 0,
+    weight: 0,
+    maxWeight: 30,
+    thirst: 100,
+    hunger: 100,
+    health: 100
 };
 
-const TOTAL_SLOTS = 35; // 5 хотбар + 30 основной инвентарь
+let inventory = {
+    environment: [], // Окружение (4x6 = 24)
+    main: [],        // Основной инвентарь (5x6 = 30)
+    backpack: [],    // Рюкзак (4x5 = 20)
+    equipment: {     // Экипировка
+        head: null,
+        mask: null,
+        top: null,
+        legs: null,
+        shoes: null,
+        backpack: null,
+        accessory: null,
+        weapon1: null,
+        weapon2: null,
+        melee: null
+    },
+    quickSlots: []   // Быстрые с��оты (5 штук)
+};
 
-// ===== ИКОНКИ ДЛЯ ТИПОВ ПРЕДМЕТОВ =====
-const itemIcons = {
-    'weapon': 'fa-gun',
-    'food': 'fa-bread-slice',
-    'drink': 'fa-bottle-water',
-    'medical': 'fa-kit-medical',
-    'tool': 'fa-wrench',
-    'material': 'fa-cube',
-    'misc': 'fa-box'
+let draggedItem = null;
+let draggedFrom = null;
+
+// ===== БАЗА ДАННЫХ ПРЕДМЕТОВ =====
+const itemDatabase = {
+    'water': { name: 'Вода', icon: '💧', weight: 0.5, stackable: true, maxStack: 10, type: 'consumable' },
+    'food': { name: 'Еда', icon: '🍔', weight: 0.3, stackable: true, maxStack: 10, type: 'consumable' },
+    'bandage': { name: 'Бинт', icon: '🩹', weight: 0.1, stackable: true, maxStack: 5, type: 'medical' },
+    'phone': { name: 'Телефон', icon: '📱', weight: 0.2, stackable: false, type: 'tool' },
+    'keys': { name: 'Ключи', icon: '🔑', weight: 0.1, stackable: false, type: 'tool' },
+    'money': { name: 'Деньги', icon: '💵', weight: 0.01, stackable: true, maxStack: 999, type: 'currency' },
+    'pistol': { name: 'Пистолет', icon: '🔫', weight: 1.5, stackable: false, type: 'weapon' },
+    'rifle': { name: 'Винтовка', icon: '🔫', weight: 3.5, stackable: false, type: 'weapon' },
+    'knife': { name: 'Нож', icon: '🔪', weight: 0.5, stackable: false, type: 'weapon' },
+    'backpack_small': { name: 'Рюкзак (малый)', icon: '🎒', weight: 1.0, stackable: false, type: 'backpack', capacity: 20 },
+    'shirt': { name: 'Рубашка', icon: '👕', weight: 0.5, stackable: false, type: 'clothing' },
+    'pants': { name: 'Штаны', icon: '👖', weight: 0.6, stackable: false, type: 'clothing' },
+    'shoes': { name: 'Ботинки', icon: '👟', weight: 0.8, stackable: false, type: 'clothing' },
+    'hat': { name: 'Шапка', icon: '🎩', weight: 0.2, stackable: false, type: 'clothing' },
+    'watch': { name: 'Часы', icon: '⌚', weight: 0.1, stackable: false, type: 'accessory' }
 };
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 window.addEventListener('DOMContentLoaded', () => {
-    console.log('[Inventory] Инициализация...');
+    console.log('[Inventory] Инициализация нового инвентаря...');
     
-    createSlots();
+    initializeGrids();
     setupEventListeners();
+    loadTestData();
     
     console.log('[Inventory] ✅ Инициализация завершена');
 });
 
-// ===== СОЗДАНИЕ СЛОТОВ =====
-function createSlots() {
-    // Хотбар (слоты 1-5)
-    const hotbarContainer = document.getElementById('hotbarSlots');
-    for (let i = 1; i <= 5; i++) {
-        const slot = createSlot(i, true);
-        hotbarContainer.appendChild(slot);
+// ===== СОЗДАНИЕ СЕТОК =====
+function initializeGrids() {
+    // Окружение (4x6 = 24 слота)
+    const environmentGrid = document.getElementById('environmentGrid');
+    for (let i = 0; i < 24; i++) {
+        const slot = createSlot('environment', i);
+        environmentGrid.appendChild(slot);
     }
     
-    // Основной инвентарь (слоты 6-35)
-    const gridContainer = document.getElementById('inventoryGrid');
-    for (let i = 6; i <= TOTAL_SLOTS; i++) {
-        const slot = createSlot(i, false);
-        gridContainer.appendChild(slot);
+    // Основной инвентарь (5x6 = 30 слотов)
+    const mainInventory = document.getElementById('mainInventory');
+    for (let i = 0; i < 30; i++) {
+        const slot = createSlot('main', i);
+        mainInventory.appendChild(slot);
     }
+    
+    // Рюкзак (4x5 = 20 слотов)
+    const backpackGrid = document.getElementById('backpackGrid');
+    for (let i = 0; i < 20; i++) {
+        const slot = createSlot('backpack', i);
+        backpackGrid.appendChild(slot);
+    }
+    
+    // Быстрые слоты (5 штук)
+    const quickSlots = document.getElementById('quickSlots');
+    for (let i = 0; i < 5; i++) {
+        const slot = createQuickSlot(i);
+        quickSlots.appendChild(slot);
+    }
+    
+    console.log('[Inventory] Сетки созданы');
 }
 
-function createSlot(slotNumber, isHotbar) {
+function createSlot(type, index) {
     const slot = document.createElement('div');
     slot.className = 'inventory-slot';
-    slot.setAttribute('data-slot', slotNumber);
-    slot.setAttribute('draggable', 'false');
+    slot.dataset.type = type;
+    slot.dataset.index = index;
     
-    const slotNum = document.createElement('div');
-    slotNum.className = 'slot-number';
-    slotNum.textContent = slotNumber;
-    slot.appendChild(slotNum);
-    
-    // События
-    slot.addEventListener('click', () => selectSlot(slotNumber));
-    slot.addEventListener('dragstart', handleDragStart);
+    // Drag & Drop
     slot.addEventListener('dragover', handleDragOver);
     slot.addEventListener('drop', handleDrop);
+    slot.addEventListener('dragstart', handleDragStart);
     slot.addEventListener('dragend', handleDragEnd);
+    
+    // Контекстное меню
+    slot.addEventListener('contextmenu', handleContextMenu);
+    
+    // Tooltip
+    slot.addEventListener('mouseenter', handleMouseEnter);
+    slot.addEventListener('mouseleave', handleMouseLeave);
     
     return slot;
 }
 
-// ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
-function setupEventListeners() {
-    // Закрытие
-    document.getElementById('closeBtn').addEventListener('click', closeInventory);
+function createQuickSlot(index) {
+    const slot = document.createElement('div');
+    slot.className = 'quick-slot';
+    slot.dataset.index = index;
     
-    // Действия с предметом
-    document.getElementById('useBtn').addEventListener('click', useItem);
-    document.getElementById('dropBtn').addEventListener('click', dropItem);
+    const number = document.createElement('div');
+    number.className = 'quick-slot-number';
+    number.textContent = index + 1;
+    slot.appendChild(number);
+    
+    slot.addEventListener('click', () => {
+        useQuickSlot(index);
+    });
+    
+    return slot;
 }
 
-// ===== ВЫБОР СЛОТА =====
-function selectSlot(slotNumber) {
-    const item = inventory.find(i => i.slot === slotNumber);
+// ===== ОТРИСОВКА ПРЕДМЕТОВ =====
+function renderInventory() {
+    // Окружение
+    renderGrid('environment', inventory.environment);
     
-    if (!item) {
-        hideItemInfo();
-        return;
+    // Основной инвентарь
+    renderGrid('main', inventory.main);
+    
+    // Рюкзак
+    renderGrid('backpack', inventory.backpack);
+    
+    // Экипировка
+    renderEquipment();
+    
+    // Быстрые слоты
+    renderQuickSlots();
+    
+    // Обновляем вес
+    updateWeight();
+}
+
+function renderGrid(type, items) {
+    const slots = document.querySelectorAll(`.inventory-slot[data-type="${type}"]`);
+    
+    slots.forEach((slot, index) => {
+        slot.innerHTML = '';
+        slot.classList.remove('has-item');
+        slot.draggable = false;
+        
+        const item = items[index];
+        
+        if (item) {
+            slot.classList.add('has-item');
+            slot.draggable = true;
+            
+            const itemData = itemDatabase[item.id];
+            
+            if (itemData) {
+                // Иконка
+                const icon = document.createElement('div');
+                icon.className = 'item-icon';
+                icon.textContent = itemData.icon;
+                slot.appendChild(icon);
+                
+                // Количество (для stackable)
+                if (itemData.stackable && item.quantity > 1) {
+                    const quantity = document.createElement('div');
+                    quantity.className = 'item-quantity';
+                    quantity.textContent = item.quantity;
+                    slot.appendChild(quantity);
+                }
+                
+                // Вес
+                const weight = document.createElement('div');
+                weight.className = 'item-weight';
+                weight.textContent = `${(itemData.weight * (item.quantity || 1)).toFixed(1)}kg`;
+                slot.appendChild(weight);
+            }
+        }
+    });
+}
+
+function renderEquipment() {
+    const equipmentSlots = document.querySelectorAll('.equipment-slot[data-slot]');
+    
+    equipmentSlots.forEach(slot => {
+        const slotType = slot.dataset.slot;
+        const item = inventory.equipment[slotType];
+        
+        // Удаляем старый контент (кроме иконки и label)
+        const existingItem = slot.querySelector('.item-icon');
+        if (existingItem) existingItem.remove();
+        
+        slot.classList.remove('has-item');
+        slot.draggable = false;
+        
+        if (item) {
+            slot.classList.add('has-item');
+            slot.draggable = true;
+            
+            const itemData = itemDatabase[item.id];
+            
+            if (itemData) {
+                const icon = document.createElement('div');
+                icon.className = 'item-icon';
+                icon.textContent = itemData.icon;
+                icon.style.fontSize = '28px';
+                slot.insertBefore(icon, slot.firstChild);
+            }
+        }
+    });
+    
+    // Обновляем статус рюкзака
+    const backpackGrid = document.getElementById('backpackGrid');
+    const backpackStatus = document.getElementById('backpackStatus');
+    const backpackTitle = document.querySelector('.backpack-title');
+    
+    if (inventory.equipment.backpack) {
+        backpackGrid.classList.add('active');
+        if (backpackTitle) backpackTitle.classList.add('active');
+        backpackStatus.textContent = 'Надет';
+        backpackStatus.style.color = 'rgba(76, 175, 80, 0.8)';
+    } else {
+        backpackGrid.classList.remove('active');
+        if (backpackTitle) backpackTitle.classList.remove('active');
+        backpackStatus.textContent = 'Не надет';
+        backpackStatus.style.color = 'rgba(244, 67, 54, 0.8)';
     }
-    
-    // Убираем выделение со всех слотов
-    document.querySelectorAll('.inventory-slot').forEach(s => s.classList.remove('selected'));
-    
-    // Выделяем текущий
-    const slotElement = document.querySelector(`.inventory-slot[data-slot="${slotNumber}"]`);
-    if (slotElement) {
-        slotElement.classList.add('selected');
-    }
-    
-    selectedSlot = slotNumber;
-    showItemInfo(item);
 }
 
-// ===== ОТОБРАЖЕНИЕ ИНФОРМАЦИИ О ПРЕДМЕТЕ =====
-function showItemInfo(item) {
-    const infoPanel = document.getElementById('selectedItemInfo');
+function renderQuickSlots() {
+    const quickSlots = document.querySelectorAll('.quick-slot');
     
-    document.getElementById('previewIcon').className = `fas ${itemIcons[item.type] || 'fa-box'}`;
-    document.getElementById('itemName').textContent = item.display_name;
-    document.getElementById('itemType').textContent = getTypeName(item.type);
-    document.getElementById('itemDescription').textContent = item.description;
-    document.getElementById('itemWeight').textContent = `${(item.weight * item.quantity).toFixed(2)} кг`;
-    document.getElementById('itemQuantity').textContent = item.quantity;
-    
-    // Показываем/скрываем кнопку использования
-    const useBtn = document.getElementById('useBtn');
-    useBtn.style.display = item.usable ? 'flex' : 'none';
-    
-    infoPanel.style.display = 'block';
-}
-
-function hideItemInfo() {
-    document.getElementById('selectedItemInfo').style.display = 'none';
-    selectedSlot = null;
-    
-    document.querySelectorAll('.inventory-slot').forEach(s => s.classList.remove('selected'));
-}
-
-function getTypeName(type) {
-    const types = {
-        'weapon': 'Оружие',
-        'food': 'Еда',
-        'drink': 'Напиток',
-        'medical': 'Медицина',
-        'tool': 'Инструмент',
-        'material': 'Материал',
-        'misc': 'Разное'
-    };
-    return types[type] || 'Неизвестно';
+    quickSlots.forEach((slot, index) => {
+        // Удаляем старую иконку
+        const existingIcon = slot.querySelector('.item-icon');
+        if (existingIcon) existingIcon.remove();
+        
+        const item = inventory.quickSlots[index];
+        
+        if (item) {
+            const itemData = itemDatabase[item.id];
+            
+            if (itemData) {
+                const icon = document.createElement('div');
+                icon.className = 'item-icon';
+                icon.textContent = itemData.icon;
+                icon.style.fontSize = '24px';
+                slot.appendChild(icon);
+            }
+        }
+    });
 }
 
 // ===== DRAG & DROP =====
 function handleDragStart(e) {
-    const slot = e.target.closest('.inventory-slot');
-    const slotNumber = parseInt(slot.getAttribute('data-slot'));
-    const item = inventory.find(i => i.slot === slotNumber);
+    const slot = e.currentTarget;
+    const type = slot.dataset.type;
+    const index = parseInt(slot.dataset.index);
     
-    if (!item) {
-        e.preventDefault();
-        return;
+    let item = null;
+    
+    if (type === 'environment') {
+        item = inventory.environment[index];
+    } else if (type === 'main') {
+        item = inventory.main[index];
+    } else if (type === 'backpack') {
+        item = inventory.backpack[index];
+    } else if (slot.classList.contains('equipment-slot')) {
+        const slotType = slot.dataset.slot;
+        item = inventory.equipment[slotType];
     }
     
-    draggedSlot = slotNumber;
-    slot.classList.add('dragging');
+    if (item) {
+        draggedItem = { ...item };
+        draggedFrom = { type, index: type.includes('equipment') ? slot.dataset.slot : index };
+        
+        slot.classList.add('dragging');
+        
+        console.log('[Inventory] Начало перетаскивания:', draggedItem);
+    }
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
     
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', slotNumber);
+    // ФИКС: Убираем подсветку со ВСЕХ слотов
+    setTimeout(() => {
+        document.querySelectorAll('.inventory-slot, .equipment-slot').forEach(slot => {
+            slot.classList.remove('drag-over');
+        });
+    }, 50);
 }
 
 function handleDragOver(e) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
 }
 
 function handleDrop(e) {
     e.preventDefault();
     
-    const targetSlot = e.target.closest('.inventory-slot');
-    if (!targetSlot) return;
+    // ФИКС: Убираем подсветку СРАЗУ
+    document.querySelectorAll('.inventory-slot, .equipment-slot').forEach(slot => {
+        slot.classList.remove('drag-over');
+    });
     
-    const targetSlotNumber = parseInt(targetSlot.getAttribute('data-slot'));
+    if (!draggedItem || !draggedFrom) return;
     
-    if (draggedSlot && draggedSlot !== targetSlotNumber) {
-        // Отправляем запрос на сервер для перемещения
-        if (typeof mp !== 'undefined') {
-            mp.trigger('cef:moveItem', draggedSlot, targetSlotNumber);
+    const targetSlot = e.currentTarget;
+    const targetType = targetSlot.dataset.type;
+    const targetIndex = parseInt(targetSlot.dataset.index);
+    
+    console.log('[Inventory] Drop:', draggedFrom, '→', { type: targetType, index: targetIndex });
+    
+    // Проверяем можно ли переместить
+    if (canMove(draggedItem, draggedFrom, { type: targetType, index: targetIndex })) {
+        moveItem(draggedFrom, { type: targetType, index: targetIndex });
+    } else {
+        console.log('[Inventory] ❌ Перемещение невозможно');
+    }
+    
+    draggedItem = null;
+    draggedFrom = null;
+}
+
+function canMove(item, from, to) {
+    // Если перемещаем в экипировку, проверяем тип
+    if (to.type && to.type.includes('equipment')) {
+        const itemData = itemDatabase[item.id];
+        const slotType = to.index; // для equipment index = slot name
+        
+        // Проверка типа предмета
+        if (slotType === 'weapon1' || slotType === 'weapon2') {
+            return itemData.type === 'weapon' && itemData.name !== 'Нож';
+        }
+        if (slotType === 'melee') {
+            return itemData.type === 'weapon' && itemData.name === 'Нож';
+        }
+        if (slotType === 'backpack') {
+            return itemData.type === 'backpack';
+        }
+        if (['head', 'mask', 'top', 'legs', 'shoes'].includes(slotType)) {
+            return itemData.type === 'clothing';
+        }
+        if (slotType === 'accessory') {
+            return itemData.type === 'accessory';
+        }
+        
+        return false;
+    }
+    
+    // Проверка веса при перемещении из окружения в инвентарь
+    if (from.type === 'environment' && (to.type === 'main' || to.type === 'backpack')) {
+        const itemData = itemDatabase[item.id];
+        const itemWeight = itemData.weight * (item.quantity || 1);
+        
+        if (playerData.weight + itemWeight > playerData.maxWeight) {
+            showNotification('error', 'Недостаточно места! Перевес.');
+            return false;
         }
     }
+    
+    return true;
 }
 
-function handleDragEnd(e) {
-    const slot = e.target.closest('.inventory-slot');
-    if (slot) {
-        slot.classList.remove('dragging');
+function moveItem(from, to) {
+    let sourceArray, targetArray;
+    let sourceIndex = from.index;
+    let targetIndex = to.index;
+    
+    // Определяем массивы источника
+    if (from.type === 'environment') {
+        sourceArray = inventory.environment;
+    } else if (from.type === 'main') {
+        sourceArray = inventory.main;
+    } else if (from.type === 'backpack') {
+        sourceArray = inventory.backpack;
+    } else if (from.type && from.type.includes('equipment')) {
+        sourceArray = null; // equipment не массив
     }
-    draggedSlot = null;
-}
-
-// ===== ДЕЙСТВИЯ С ПРЕДМЕТАМИ =====
-function useItem() {
-    if (!selectedSlot) return;
     
-    const item = inventory.find(i => i.slot === selectedSlot);
-    if (!item || !item.usable) return;
+    // Определяем массивы назначения
+    if (to.type === 'environment') {
+        targetArray = inventory.environment;
+    } else if (to.type === 'main') {
+        targetArray = inventory.main;
+    } else if (to.type === 'backpack') {
+        targetArray = inventory.backpack;
+    } else if (to.type && to.type.includes('equipment')) {
+        targetArray = null; // equipment не массив
+    }
     
-    console.log('[Inventory] Использование предмета:', item.name);
+    // Получаем предметы
+    let sourceItem, targetItem;
     
+    if (sourceArray) {
+        sourceItem = sourceArray[sourceIndex];
+    } else {
+        sourceItem = inventory.equipment[sourceIndex];
+    }
+    
+    if (targetArray) {
+        targetItem = targetArray[targetIndex];
+    } else {
+        targetItem = inventory.equipment[targetIndex];
+    }
+    
+    // Меняем местами или перемещаем
+    if (sourceArray && targetArray) {
+        // Оба массивы
+        if (targetItem && sourceItem.id === targetItem.id) {
+            // Стакаем если возможно
+            const itemData = itemDatabase[sourceItem.id];
+            
+            if (itemData.stackable) {
+                const totalQuantity = (sourceItem.quantity || 1) + (targetItem.quantity || 1);
+                
+                if (totalQuantity <= itemData.maxStack) {
+                    targetArray[targetIndex].quantity = totalQuantity;
+                    sourceArray[sourceIndex] = null;
+                } else {
+                    // Переполнение
+                    targetArray[targetIndex].quantity = itemData.maxStack;
+                    sourceArray[sourceIndex].quantity = totalQuantity - itemData.maxStack;
+                }
+            } else {
+                // Swap
+                [sourceArray[sourceIndex], targetArray[targetIndex]] = [targetArray[targetIndex], sourceArray[sourceIndex]];
+            }
+        } else {
+            // Swap
+            [sourceArray[sourceIndex], targetArray[targetIndex]] = [targetArray[targetIndex], sourceArray[sourceIndex]];
+        }
+    } else if (sourceArray && !targetArray) {
+        // Из массива в equipment
+        inventory.equipment[targetIndex] = sourceItem;
+        sourceArray[sourceIndex] = targetItem; // может быть null
+    } else if (!sourceArray && targetArray) {
+        // Из equipment в массив
+        inventory.equipment[sourceIndex] = targetItem; // может быть null
+        targetArray[targetIndex] = sourceItem;
+    } else {
+        // Оба equipment (swap)
+        [inventory.equipment[sourceIndex], inventory.equipment[targetIndex]] = [inventory.equipment[targetIndex], inventory.equipment[sourceIndex]];
+    }
+    
+    // Отправляем на сервер
     if (typeof mp !== 'undefined') {
-        mp.trigger('cef:useItem', selectedSlot);
+        mp.trigger('cef:moveItem', JSON.stringify(from), JSON.stringify(to));
     }
+    
+    renderInventory();
+    
+    console.log('[Inventory] ✅ Предмет перемещён');
 }
 
-function dropItem() {
-    if (!selectedSlot) return;
+// ===== КОНТЕКСТНОЕ МЕНЮ =====
+function handleContextMenu(e) {
+    e.preventDefault();
     
-    const item = inventory.find(i => i.slot === selectedSlot);
+    const slot = e.currentTarget;
+    const type = slot.dataset.type;
+    const index = slot.dataset.index || slot.dataset.slot;
+    
+    let item = null;
+    
+    if (type === 'environment') {
+        item = inventory.environment[index];
+    } else if (type === 'main') {
+        item = inventory.main[index];
+    } else if (type === 'backpack') {
+        item = inventory.backpack[index];
+    } else if (slot.classList.contains('equipment-slot')) {
+        item = inventory.equipment[index];
+    }
+    
     if (!item) return;
     
-    // Запрашиваем количество если стак больше 1
-    let quantity = item.quantity;
-    if (item.quantity > 1) {
-        quantity = prompt(`Сколько выбросить? (макс: ${item.quantity})`, item.quantity);
-        if (!quantity || quantity <= 0) return;
-        quantity = Math.min(parseInt(quantity), item.quantity);
-    }
+    showContextMenu(e.clientX, e.clientY, item, { type, index });
+}
+
+function showContextMenu(x, y, item, location) {
+    const menu = document.getElementById('contextMenu');
     
-    console.log('[Inventory] Выброс предмета:', item.name, 'x', quantity);
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.display = 'block';
     
-    if (typeof mp !== 'undefined') {
-        mp.trigger('cef:dropItem', selectedSlot, quantity);
+    // Удаляем старые обработчики
+    const newMenu = menu.cloneNode(true);
+    menu.parentNode.replaceChild(newMenu, menu);
+    
+    // Добавляем новые
+    newMenu.querySelectorAll('.context-item').forEach(menuItem => {
+        menuItem.addEventListener('click', () => {
+            const action = menuItem.dataset.action;
+            handleContextAction(action, item, location);
+            newMenu.style.display = 'none';
+        });
+    });
+    
+    // Закрытие при клике вне меню
+    setTimeout(() => {
+        document.addEventListener('click', () => {
+            newMenu.style.display = 'none';
+        }, { once: true });
+    }, 100);
+}
+
+function handleContextAction(action, item, location) {
+    console.log('[Inventory] Действие:', action, item);
+    
+    switch (action) {
+        case 'use':
+            useItem(item, location);
+            break;
+        case 'drop':
+            dropItem(item, location);
+            break;
+        case 'split':
+            splitItem(item, location);
+            break;
+        case 'info':
+            showItemInfo(item);
+            break;
     }
 }
 
-// ===== ЗАГРУЗКА ИНВЕНТАРЯ =====
-function loadInventory(inventoryData, charData) {
-    console.log('[Inventory] Загрузка инвентаря:', inventoryData);
+function useItem(item, location) {
+    console.log('[Inventory] Использование:', item.id);
     
-    inventory = inventoryData;
-    characterData = charData;
+    if (typeof mp !== 'undefined') {
+        mp.trigger('cef:useItem', location.index);
+    }
     
-    // Обновляем данные персонажа
-    document.getElementById('characterName').textContent = charData.name;
-    document.getElementById('characterLevel').textContent = `Уровень ${charData.level}`;
+    showNotification('success', `Использован: ${itemDatabase[item.id].name}`);
+}
+
+function dropItem(item, location) {
+    console.log('[Inventory] Выброс:', item.id);
     
-    // Очищаем все слоты
-    document.querySelectorAll('.inventory-slot').forEach(slot => {
-        const slotNum = slot.querySelector('.slot-number');
-        slot.innerHTML = '';
-        slot.appendChild(slotNum);
-        slot.removeAttribute('data-type');
-        slot.setAttribute('draggable', 'false');
-    });
+    if (typeof mp !== 'undefined') {
+        mp.trigger('cef:dropItem', location.index, item.quantity || 1);
+    }
     
-    // Заполняем слоты предметами
-    inventory.forEach(item => {
-        const slotElement = document.querySelector(`.inventory-slot[data-slot="${item.slot}"]`);
-        if (!slotElement) return;
+    // Удаляем из инвентаря
+    if (location.type === 'main') {
+        inventory.main[location.index] = null;
+    } else if (location.type === 'backpack') {
+        inventory.backpack[location.index] = null;
+    } else if (location.type && location.type.includes('equipment')) {
+        inventory.equipment[location.index] = null;
+    }
+    
+    renderInventory();
+    showNotification('info', `Выброшен: ${itemDatabase[item.id].name}`);
+}
+
+function splitItem(item, location) {
+    const itemData = itemDatabase[item.id];
+    
+    if (!itemData.stackable || item.quantity <= 1) {
+        showNotification('error', 'Невозможно разделить этот предмет');
+        return;
+    }
+    
+    const amount = prompt(`Разделить стак (макс: ${item.quantity}):`, Math.floor(item.quantity / 2));
+    
+    if (amount && !isNaN(amount)) {
+        const splitAmount = parseInt(amount);
         
-        slotElement.setAttribute('data-type', item.type);
-        slotElement.setAttribute('draggable', 'true');
+        if (splitAmount > 0 && splitAmount < item.quantity) {
+            // Находим пустой слот
+            const emptySlot = findEmptySlot(location.type);
+            
+            if (emptySlot !== -1) {
+                // Уменьшаем количество в исходном слоте
+                if (location.type === 'main') {
+                    inventory.main[location.index].quantity -= splitAmount;
+                    inventory.main[emptySlot] = { id: item.id, quantity: splitAmount };
+                } else if (location.type === 'backpack') {
+                    inventory.backpack[location.index].quantity -= splitAmount;
+                    inventory.backpack[emptySlot] = { id: item.id, quantity: splitAmount };
+                }
+                
+                renderInventory();
+                showNotification('success', 'Предмет разделён');
+            } else {
+                showNotification('error', 'Нет свободных слотов');
+            }
+        }
+    }
+}
+
+function findEmptySlot(type) {
+    const array = type === 'main' ? inventory.main : inventory.backpack;
+    return array.findIndex(slot => !slot);
+}
+
+function showItemInfo(item) {
+    const itemData = itemDatabase[item.id];
+    alert(`${itemData.name}\n\nВес: ${itemData.weight} kg\nТип: ${itemData.type}\n${itemData.stackable ? `Макс. стак: ${itemData.maxStack}` : 'Не стакается'}`);
+}
+
+// ===== TOOLTIP =====
+function handleMouseEnter(e) {
+    const slot = e.currentTarget;
+    const type = slot.dataset.type;
+    const index = slot.dataset.index || slot.dataset.slot;
+    
+    let item = null;
+    
+    if (type === 'environment') {
+        item = inventory.environment[index];
+    } else if (type === 'main') {
+        item = inventory.main[index];
+    } else if (type === 'backpack') {
+        item = inventory.backpack[index];
+    } else if (slot.classList.contains('equipment-slot')) {
+        item = inventory.equipment[index];
+    }
+    
+    if (!item) return;
+    
+    const itemData = itemDatabase[item.id];
+    const tooltip = document.getElementById('itemTooltip');
+    
+    document.getElementById('tooltipName').textContent = itemData.name;
+    document.getElementById('tooltipWeight').textContent = `${itemData.weight} kg`;
+    document.getElementById('tooltipDescription').textContent = `Тип: ${itemData.type}${itemData.stackable ? ` | Макс. стак: ${itemData.maxStack}` : ''}`;
+    
+    tooltip.style.display = 'block';
+    tooltip.style.left = `${e.clientX + 15}px`;
+    tooltip.style.top = `${e.clientY + 15}px`;
+    
+    // Двигаем tooltip за курсором
+    slot.addEventListener('mousemove', moveTooltip);
+}
+
+function handleMouseLeave(e) {
+    const tooltip = document.getElementById('itemTooltip');
+    tooltip.style.display = 'none';
+    
+    e.currentTarget.removeEventListener('mousemove', moveTooltip);
+}
+
+function moveTooltip(e) {
+    const tooltip = document.getElementById('itemTooltip');
+    tooltip.style.left = `${e.clientX + 15}px`;
+    tooltip.style.top = `${e.clientY + 15}px`;
+}
+
+// ===== БЫСТРЫЕ СЛОТЫ =====
+function useQuickSlot(index) {
+    const item = inventory.quickSlots[index];
+    
+    if (item) {
+        console.log('[Inventory] Использование быстрого слота', index + 1);
         
-        const icon = document.createElement('i');
-        icon.className = `fas ${itemIcons[item.type] || 'fa-box'} item-icon`;
-        slotElement.appendChild(icon);
+        if (typeof mp !== 'undefined') {
+            mp.trigger('cef:useQuickSlot', index);
+        }
         
-        if (item.quantity > 1) {
-            const quantity = document.createElement('div');
-            quantity.className = 'item-quantity';
-            quantity.textContent = item.quantity;
-            slotElement.appendChild(quantity);
+        showNotification('info', `Использован: ${itemDatabase[item.id].name}`);
+    }
+}
+
+// ===== ОБНОВЛЕНИЕ ДАННЫХ =====
+function updateWeight() {
+    let totalWeight = 0;
+    
+    // Считаем вес из основного инвентаря
+    inventory.main.forEach(item => {
+        if (item) {
+            const itemData = itemDatabase[item.id];
+            totalWeight += itemData.weight * (item.quantity || 1);
         }
     });
     
-    // Обновляем вес
-    updateWeight();
+    // Считаем вес из рюкзака
+    inventory.backpack.forEach(item => {
+        if (item) {
+            const itemData = itemDatabase[item.id];
+            totalWeight += itemData.weight * (item.quantity || 1);
+        }
+    });
     
-    console.log('[Inventory] ✅ Инвентарь загружен');
-}
-
-// ===== ОБНОВЛЕНИЕ ВЕСА =====
-function updateWeight() {
-    const currentWeight = inventory.reduce((sum, item) => sum + (item.weight * item.quantity), 0);
-    characterData.currentWeight = currentWeight;
+    // Считаем вес экипировки
+    Object.values(inventory.equipment).forEach(item => {
+        if (item) {
+            const itemData = itemDatabase[item.id];
+            totalWeight += itemData.weight;
+        }
+    });
     
-    document.getElementById('currentWeight').textContent = currentWeight.toFixed(1);
-    document.getElementById('maxWeight').textContent = characterData.maxWeight;
+    playerData.weight = totalWeight;
     
-    const percentage = (currentWeight / characterData.maxWeight) * 100;
-    const fill = document.getElementById('weightFill');
-    fill.style.width = `${Math.min(percentage, 100)}%`;
+    const weightDisplay = document.getElementById('weightDisplay');
+    weightDisplay.textContent = `${totalWeight.toFixed(2)} / ${playerData.maxWeight} kg`;
     
-    fill.classList.remove('warning', 'danger');
+    // Цвет в зависимости от веса
+    const percentage = (totalWeight / playerData.maxWeight) * 100;
+    
     if (percentage >= 90) {
-        fill.classList.add('danger');
+        weightDisplay.style.color = '#f44336';
     } else if (percentage >= 70) {
-        fill.classList.add('warning');
+        weightDisplay.style.color = '#ff9800';
+    } else {
+        weightDisplay.style.color = 'rgba(255, 255, 255, 0.7)';
     }
 }
 
-// ===== ЗАКРЫТИЕ ИНВЕНТАРЯ =====
+function updatePlayerInfo(data) {
+    playerData = { ...playerData, ...data };
+    
+    // Имя
+    document.getElementById('playerName').textContent = data.name || playerData.name;
+    
+    // Деньги
+    document.getElementById('cashAmount').textContent = `$${(data.cash || 0).toLocaleString()}`;
+    document.getElementById('bankAmount').textContent = `$${(data.bank || 0).toLocaleString()}`;
+    
+    // Статы
+    updateStat('thirst', data.thirst || 100);
+    updateStat('hunger', data.hunger || 100);
+    updateStat('health', data.health || 100);
+    
+    // Максимальный вес
+    if (data.maxWeight) {
+        playerData.maxWeight = data.maxWeight;
+    }
+}
+
+function updateStat(stat, value) {
+    const bar = document.getElementById(`${stat}Bar`);
+    const valueEl = document.getElementById(`${stat}Value`);
+    
+    if (bar && valueEl) {
+        bar.style.width = `${value}%`;
+        valueEl.textContent = value;
+    }
+}
+
+// ===== УВЕДОМЛЕНИЯ =====
+function showNotification(type, message) {
+    console.log(`[Inventory] ${type.toUpperCase()}: ${message}`);
+    
+    // Можно добавить визуальные уведомления
+    // Пока просто в консоль
+}
+
+// ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
+function setupEventListeners() {
+    // Закрытие инвентаря
+    const closeBtn = document.getElementById('closeBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeInventory);
+    }
+    
+    // Экипировка слоты (добавляем drag&drop)
+    document.querySelectorAll('.equipment-slot[data-slot]').forEach(slot => {
+        slot.draggable = false; // Сначала false, станет true когда там будет предмет
+        slot.addEventListener('dragover', handleDragOver);
+        slot.addEventListener('drop', handleDrop);
+        slot.addEventListener('dragstart', handleDragStart);
+        slot.addEventListener('dragend', handleDragEnd);
+        slot.addEventListener('contextmenu', handleContextMenu);
+        slot.addEventListener('mouseenter', handleMouseEnter);
+        slot.addEventListener('mouseleave', handleMouseLeave);
+    });
+    
+    // Клавиши 1-5 для быстрых слотов
+    document.addEventListener('keydown', (e) => {
+        if (e.key >= '1' && e.key <= '5') {
+            const index = parseInt(e.key) - 1;
+            useQuickSlot(index);
+        }
+    });
+}
+
 function closeInventory() {
     console.log('[Inventory] Закрытие инвентаря');
     
@@ -298,27 +804,76 @@ function closeInventory() {
 }
 
 // ===== СОБЫТИЯ ОТ КЛИЕНТА =====
-if (typeof mp !== 'undefined') {
-    // Загрузка инвентаря
-    mp.events.add('inventory:load', (inventoryJson, charDataJson) => {
-        try {
-            const inventoryData = JSON.parse(inventoryJson);
-            const charData = JSON.parse(charDataJson);
-            loadInventory(inventoryData, charData);
-        } catch (err) {
-            console.error('[Inventory] Ошибка парсинга:', err);
-        }
-    });
-    
-    // Обновление инвентаря
-    mp.events.add('inventory:update', (inventoryJson) => {
-        try {
-            const inventoryData = JSON.parse(inventoryJson);
-            loadInventory(inventoryData, characterData);
-        } catch (err) {
-            console.error('[Inventory] Ошибка обновления:', err);
-        }
-    });
+function loadInventory(inventoryJson, charDataJson) {
+    try {
+        const invData = typeof inventoryJson === 'string' ? JSON.parse(inventoryJson) : inventoryJson;
+        const charData = typeof charDataJson === 'string' ? JSON.parse(charDataJson) : charDataJson;
+        
+        console.log('[Inventory] Загрузка данных инвентаря:', invData);
+        console.log('[Inventory] Данные персонажа:', charData);
+        
+        // Обновляем инвентарь
+        inventory = { ...inventory, ...invData };
+        
+        // Обновляем данные персонажа
+        updatePlayerInfo(charData);
+        
+        // Рендерим
+        renderInventory();
+        
+        console.log('[Inventory] ✅ Данные загружены');
+        
+    } catch (err) {
+        console.error('[Inventory] ❌ Ошибка загрузки:', err);
+    }
 }
 
-console.log('[Inventory] ===== СКРИПТ ЗАГРУЖЕН =====');
+// ===== ТЕСТОВЫЕ ДАННЫЕ =====
+function loadTestData() {
+    console.log('[Inventory] Загрузка тестовых данных...');
+    
+    // Окружение
+    inventory.environment[0] = { id: 'water', quantity: 3 };
+    inventory.environment[1] = { id: 'food', quantity: 2 };
+    inventory.environment[4] = { id: 'bandage', quantity: 5 };
+    inventory.environment[8] = { id: 'money', quantity: 500 };
+    
+    // Основной инвентарь
+    inventory.main[0] = { id: 'phone', quantity: 1 };
+    inventory.main[1] = { id: 'keys', quantity: 1 };
+    inventory.main[2] = { id: 'water', quantity: 2 };
+    inventory.main[7] = { id: 'food', quantity: 5 };
+    inventory.main[15] = { id: 'bandage', quantity: 3 };
+    
+    // Экипировка
+    inventory.equipment.weapon1 = { id: 'pistol', quantity: 1 };
+    inventory.equipment.top = { id: 'shirt', quantity: 1 };
+    inventory.equipment.legs = { id: 'pants', quantity: 1 };
+    inventory.equipment.shoes = { id: 'shoes', quantity: 1 };
+    
+    // Быстрые слоты
+    inventory.quickSlots[0] = { id: 'water', quantity: 1 };
+    inventory.quickSlots[1] = { id: 'food', quantity: 1 };
+    inventory.quickSlots[2] = { id: 'bandage', quantity: 1 };
+    
+    // Данные игрока
+    updatePlayerInfo({
+        name: 'Kit Tysh',
+        cash: 1234,
+        bank: 56789,
+        thirst: 80,
+        hunger: 60,
+        health: 100,
+        maxWeight: 30
+    });
+    
+    renderInventory();
+    
+    console.log('[Inventory] ✅ Тестовые данные загружены');
+}
+
+// ===== ЭКСПОРТ ФУНКЦИЙ =====
+window.loadInventory = loadInventory;
+window.updatePlayerInfo = updatePlayerInfo;
+
+console.log('[Inventory Script] ✅ Загружен');
