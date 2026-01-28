@@ -879,6 +879,11 @@ function finishSpawn(player, character) {
     }, 500);
     
     isSpawned = true;
+    
+    console.log('[HUD] Персонаж заспавнен, создаём HUD...');
+    setTimeout(() => {
+        createHUD();
+    }, 1000);
 }
 
 function applyFullAppearance(appearance, callback) {
@@ -2240,9 +2245,10 @@ let hudBrowser = null;
 let isHudVisible = true;
 let hudCreated = false;
 
-// Создание HUD
+// Создание HUD - ТОЛЬКО ПОСЛЕ СПАВНА ПЕРСОНАЖА
 function createHUD() {
-    if (hudBrowser || hudCreated) return;
+    // Не создаём если уже создан или персонаж не заспавнен
+    if (hudBrowser || hudCreated || !isSpawned) return;
     
     try {
         hudBrowser = mp.browsers.new('package://cef/hud/index.html');
@@ -2251,14 +2257,23 @@ function createHUD() {
         
         // Запрашиваем начальные данные через 1 секунду
         setTimeout(() => {
-            if (mp.players.local.characterId) {
-                mp.events.callRemote('hud:requestData');
-            }
+            mp.events.callRemote('hud:requestData');
         }, 1000);
     } catch (err) {
         console.error('[HUD] Ошибка создания:', err);
     }
 }
+
+// НЕ создаём HUD при playerReady - это слишком рано!
+// mp.events.add('playerReady', () => {
+//     setTimeout(createHUD, 2000);
+// });
+
+// Создаём HUD только после загрузки персонажа
+mp.events.add('client:characterLoaded', () => {
+    console.log('[HUD] Событие characterLoaded получено');
+    setTimeout(createHUD, 500);
+});
 
 // Создаём HUD при готовности браузера
 mp.events.add('browserDomReady', (browser) => {
