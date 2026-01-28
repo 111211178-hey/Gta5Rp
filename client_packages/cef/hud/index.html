@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- SVG Градиенты -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#4caf50"/>
+                <stop offset="50%" style="stop-color:#ff9800"/>
+                <stop offset="100%" style="stop-color:#f44336"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <!-- ===== ОСНОВНОЙ HUD (правый нижний угол) ===== -->
+    <div class="hud-container">
+        <!-- Статус бары -->
+        <div class="status-bars">
+            <!-- Здоровье -->
+            <div class="status-bar health">
+                <div class="bar-icon"><i class="fas fa-heart"></i></div>
+                <div class="bar-container">
+                    <div class="bar-fill" id="healthBar" style="width: 100%"></div>
+                </div>
+                <div class="bar-value" id="healthValue">100</div>
+            </div>
+            
+            <!-- Броня -->
+            <div class="status-bar armor" id="armorContainer">
+                <div class="bar-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="bar-container">
+                    <div class="bar-fill" id="armorBar" style="width: 0%"></div>
+                </div>
+                <div class="bar-value" id="armorValue">0</div>
+            </div>
+            
+            <!-- Голод -->
+            <div class="status-bar hunger">
+                <div class="bar-icon"><i class="fas fa-drumstick-bite"></i></div>
+                <div class="bar-container">
+                    <div class="bar-fill" id="hungerBar" style="width: 100%"></div>
+                </div>
+                <div class="bar-value" id="hungerValue">100</div>
+            </div>
+            
+            <!-- Жажда -->
+            <div class="status-bar thirst">
+                <div class="bar-icon"><i class="fas fa-tint"></i></div>
+                <div class="bar-container">
+                    <div class="bar-fill" id="thirstBar" style="width: 100%"></div>
+                </div>
+                <div class="bar-value" id="thirstValue">100</div>
+            </div>
+        </div>
+
+        <!-- Деньги -->
+        <div class="money-display">
+            <div class="money-item cash">
+                <i class="fas fa-wallet"></i>
+                <span id="cashAmount">$0</span>
+            </div>
+            <div class="money-item bank">
+                <i class="fas fa-university"></i>
+                <span id="bankAmount">$0</span>
+            </div>
+        </div>
+
+        <!-- Уровень и опыт -->
+        <div class="level-display">
+            <div class="level-badge" id="levelBadge">1</div>
+            <div class="exp-container">
+                <div class="exp-bar">
+                    <div class="exp-fill" id="expBar" style="width: 0%"></div>
+                </div>
+                <div class="exp-text" id="expText">0 / 1000 XP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== СПИДОМЕТР ===== -->
+    <div class="speedometer" id="speedometer">
+        <div class="speed-circle">
+            <svg viewBox="0 0 200 200">
+                <circle class="speed-bg" cx="100" cy="100" r="85"/>
+                <circle class="speed-progress" id="speedProgress" cx="100" cy="100" r="85"/>
+            </svg>
+            <div class="speed-content">
+                <div class="speed-value" id="speedValue">0</div>
+                <div class="speed-unit">km/h</div>
+            </div>
+        </div>
+        
+        <div class="vehicle-info">
+            <div class="vehicle-name" id="vehicleName">Транспорт</div>
+            <div class="vehicle-stats">
+                <div class="vehicle-stat">
+                    <i class="fas fa-gas-pump"></i>
+                    <div class="stat-bar">
+                        <div class="stat-fill fuel" id="fuelBar" style="width: 100%"></div>
+                    </div>
+                    <span id="fuelValue">100%</span>
+                </div>
+                <div class="vehicle-stat">
+                    <i class="fas fa-heart"></i>
+                    <div class="stat-bar">
+                        <div class="stat-fill engine" id="engineBar" style="width: 100%"></div>
+                    </div>
+                    <span id="engineValue">100%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="vehicle-controls">
+            <div class="control-item" id="engineStatus">
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="control-item" id="lightsStatus">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="control-item" id="lockStatus">
+                <i class="fas fa-lock-open"></i>
+            </div>
+            <div class="control-item" id="beltStatus">
+                <i class="fas fa-user-shield"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ЗОНА МИНИКАРТЫ ===== -->
+    <div class="minimap-zone">
+        <div class="location-info">
+            <div class="street-name" id="streetName">Los Santos</div>
+            <div class="zone-name" id="zoneName">Район</div>
+        </div>
+        <div class="compass" id="compass">
+            <div class="compass-direction" id="compassDirection">N</div>
+        </div>
+        <div class="time-display">
+            <i class="fas fa-clock"></i>
+            <span id="gameTime">12:00</span>
+        </div>
+    </div>
+
+    <!-- ===== УВЕДОМЛЕНИЯ ===== -->
+    <div class="notifications-container" id="notificationsContainer"></div>
+
+    <!-- ===== ИНФОРМАЦИЯ О СЕРВЕРЕ ===== -->
+    <div class="server-info">
+        <div class="server-name">GTA5 RP</div>
+        <div class="player-count">Online: <span id="onlineCount">0</span></div>
+        <div class="player-id">ID: <span id="myId">0</span></div>
+    </div>
+
+    <!-- ===== ГОЛОСОВОЙ ЧАТ ===== -->
+    <div class="voice-indicator" id="voiceIndicator">
+        <i class="fas fa-microphone"></i>
+        <div class="voice-waves">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <!-- ===== ПОДСКАЗКИ КЛАВИШ ===== -->
+    <div class="keyhints" id="keyhints"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

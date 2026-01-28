@@ -1,3 +1,45 @@
+// ===== PHONE SCRIPT =====
+
+let phoneData = {};
+let dialNumber = '';
+let callTimerInterval = null;
+let callSeconds = 0;
+let allContacts = [];
+let currentChatPhone = '';
+
+// ===== INITIALIZATION =====
+function loadPhoneData(dataJson) {
+    try {
+        phoneData = JSON.parse(dataJson);
+        
+        document.getElementById('homeTime').textContent = phoneData.time || '12:00';
+        document.getElementById('statusTime').textContent = phoneData.time || '12:00';
+        document.getElementById('homeDate').textContent = phoneData.date || '1 января';
+        document.getElementById('ownerName').textContent = phoneData.owner || 'Владелец';
+        document.getElementById('ownerPhone').textContent = phoneData.phoneNumber || '555-000-0000';
+        document.getElementById('bankBalance').textContent = '$' + (phoneData.bankBalance || 0).toLocaleString();
+        document.getElementById('cardHolder').textContent = phoneData.owner || 'Владелец';
+        document.getElementById('settingsAvatar').textContent = (phoneData.owner || 'U')[0].toUpperCase();
+        
+        // Generate last 4 digits from phone number
+        const phone = phoneData.phoneNumber || '555-000-0000';
+        document.getElementById('cardLast4').textContent = phone.replace(/-/g, '').slice(-4);
+        
+        if (phoneData.contacts) {
+            allContacts = phoneData.contacts;
+            updateContacts(JSON.stringify(phoneData.contacts));
+        }
+        if (phoneData.messages) updateMessages(JSON.stringify(phoneData.messages));
+        if (phoneData.callHistory) updateCallHistory(phoneData.callHistory);
+        
+    } catch (e) {
+        console.error('Error loading phone data:', e);
+    }
+}
+
+// ===== NAVIGATION =====
+function goHome() {
+    document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
     document.getElementById('home').classList.add('active');
     document.getElementById('chatView').style.display = 'none';
     document.getElementById('newMessageForm').style.display = 'none';

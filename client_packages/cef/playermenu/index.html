@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню игрока</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="menu-container">
+        <!-- Tabs -->
+        <div class="menu-tabs">
+            <button class="tab-btn active" onclick="switchTab('info')">
+                <i class="fas fa-user"></i> Персонаж
+            </button>
+            <button class="tab-btn" onclick="switchTab('skills')">
+                <i class="fas fa-star"></i> Навыки
+            </button>
+            <button class="close-btn" onclick="closeMenu()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="menu-content">
+            <!-- Character Info Tab -->
+            <div class="tab-content active" id="info-tab">
+                <!-- Header with avatar -->
+                <div class="player-header">
+                    <div class="player-avatar" id="playerAvatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="player-main-info">
+                        <h1 id="playerName">Имя Фамилия</h1>
+                        <div class="player-id">ID: <span id="playerId">0</span></div>
+                    </div>
+                </div>
+
+                <!-- Level & Experience -->
+                <div class="info-section">
+                    <div class="section-title"><i class="fas fa-chart-line"></i> Уровень и опыт</div>
+                    <div class="level-container">
+                        <div class="level-badge" id="playerLevel">1</div>
+                        <div class="level-info">
+                            <div class="level-text">Уровень <span id="levelNum">1</span></div>
+                            <div class="exp-bar">
+                                <div class="exp-fill" id="expFill" style="width: 0%"></div>
+                            </div>
+                            <div class="exp-text"><span id="currentExp">0</span> / <span id="maxExp">1000</span> XP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="info-section">
+                    <div class="section-title"><i class="fas fa-info-circle"></i> Информация</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-birthday-cake"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Возраст</div>
+                                <div class="stat-value" id="playerAge">25 лет</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-venus-mars"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Пол</div>
+                                <div class="stat-value" id="playerGender">Мужской</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Время в игре</div>
+                                <div class="stat-value" id="playTime">0 часов</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Регистрация</div>
+                                <div class="stat-value" id="regDate">01.01.2024</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Faction & Job -->
+                <div class="info-section">
+                    <div class="section-title"><i class="fas fa-users"></i> Организация и работа</div>
+                    <div class="org-job-container">
+                        <div class="org-card">
+                            <div class="org-icon faction">
+                                <i class="fas fa-shield-alt" id="factionIcon"></i>
+                            </div>
+                            <div class="org-info">
+                                <div class="org-label">Фракция</div>
+                                <div class="org-name" id="factionName">Нет фракции</div>
+                                <div class="org-rank" id="factionRank"></div>
+                            </div>
+                        </div>
+                        <div class="org-card">
+                            <div class="org-icon job">
+                                <i class="fas fa-briefcase" id="jobIcon"></i>
+                            </div>
+                            <div class="org-info">
+                                <div class="org-label">Работа</div>
+                                <div class="org-name" id="jobName">Безработный</div>
+                                <div class="org-rank" id="jobSalary"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Money -->
+                <div class="info-section">
+                    <div class="section-title"><i class="fas fa-wallet"></i> Финансы</div>
+                    <div class="money-container">
+                        <div class="money-card cash">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <div class="money-info">
+                                <div class="money-label">Наличные</div>
+                                <div class="money-value" id="playerCash">$0</div>
+                            </div>
+                        </div>
+                        <div class="money-card bank">
+                            <i class="fas fa-university"></i>
+                            <div class="money-info">
+                                <div class="money-label">Банк</div>
+                                <div class="money-value" id="playerBank">$0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Tab -->
+            <div class="tab-content" id="skills-tab">
+                <div class="skills-header">
+                    <h2>Дерево навыков</h2>
+                    <div class="skill-points">
+                        <i class="fas fa-star"></i>
+                        <span>Очки навыков: <strong id="skillPoints">0</strong></span>
+                    </div>
+                </div>
+
+                <div class="skills-container">
+                    <!-- Strength Branch -->
+                    <div class="skill-branch">
+                        <div class="branch-header strength">
+                            <i class="fas fa-fist-raised"></i>
+                            <span>Сила</span>
+                        </div>
+                        <div class="skill-tree">
+                            <div class="skill-node" data-skill="strength_1" data-cost="1" onclick="upgradeSkill('strength_1')">
+                                <div class="skill-icon"><i class="fas fa-dumbbell"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Выносливость I</div>
+                                    <div class="skill-desc">+10% к выносливости</div>
+                                </div>
+                                <div class="skill-level"><span id="strength_1_level">0</span>/5</div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="strength_2" data-cost="2" data-requires="strength_1:3" onclick="upgradeSkill('strength_2')">
+                                <div class="skill-icon"><i class="fas fa-heartbeat"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Выносливость II</div>
+                                    <div class="skill-desc">+20% к здоровью</div>
+                                </div>
+                                <div class="skill-level"><span id="strength_2_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="strength_3" data-cost="3" data-requires="strength_2:3" onclick="upgradeSkill('strength_3')">
+                                <div class="skill-icon"><i class="fas fa-shield-alt"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Броня</div>
+                                    <div class="skill-desc">+15% к броне</div>
+                                </div>
+                                <div class="skill-level"><span id="strength_3_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agility Branch -->
+                    <div class="skill-branch">
+                        <div class="branch-header agility">
+                            <i class="fas fa-running"></i>
+                            <span>Ловкость</span>
+                        </div>
+                        <div class="skill-tree">
+                            <div class="skill-node" data-skill="agility_1" data-cost="1" onclick="upgradeSkill('agility_1')">
+                                <div class="skill-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Скорость I</div>
+                                    <div class="skill-desc">+5% к скорости бега</div>
+                                </div>
+                                <div class="skill-level"><span id="agility_1_level">0</span>/5</div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="agility_2" data-cost="2" data-requires="agility_1:3" onclick="upgradeSkill('agility_2')">
+                                <div class="skill-icon"><i class="fas fa-car"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Вождение</div>
+                                    <div class="skill-desc">Лучший контроль авто</div>
+                                </div>
+                                <div class="skill-level"><span id="agility_2_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="agility_3" data-cost="3" data-requires="agility_2:3" onclick="upgradeSkill('agility_3')">
+                                <div class="skill-icon"><i class="fas fa-eye"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Рефлексы</div>
+                                    <div class="skill-desc">+10% к точности</div>
+                                </div>
+                                <div class="skill-level"><span id="agility_3_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Intelligence Branch -->
+                    <div class="skill-branch">
+                        <div class="branch-header intelligence">
+                            <i class="fas fa-brain"></i>
+                            <span>Интеллект</span>
+                        </div>
+                        <div class="skill-tree">
+                            <div class="skill-node" data-skill="intel_1" data-cost="1" onclick="upgradeSkill('intel_1')">
+                                <div class="skill-icon"><i class="fas fa-coins"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Торговля</div>
+                                    <div class="skill-desc">-5% к ценам в магазинах</div>
+                                </div>
+                                <div class="skill-level"><span id="intel_1_level">0</span>/5</div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="intel_2" data-cost="2" data-requires="intel_1:3" onclick="upgradeSkill('intel_2')">
+                                <div class="skill-icon"><i class="fas fa-tools"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Крафт</div>
+                                    <div class="skill-desc">Доп. рецепты крафта</div>
+                                </div>
+                                <div class="skill-level"><span id="intel_2_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="intel_3" data-cost="3" data-requires="intel_2:3" onclick="upgradeSkill('intel_3')">
+                                <div class="skill-icon"><i class="fas fa-laptop-code"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Хакинг</div>
+                                    <div class="skill-desc">Взлом электроники</div>
+                                </div>
+                                <div class="skill-level"><span id="intel_3_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Luck Branch -->
+                    <div class="skill-branch">
+                        <div class="branch-header luck">
+                            <i class="fas fa-clover"></i>
+                            <span>Удача</span>
+                        </div>
+                        <div class="skill-tree">
+                            <div class="skill-node" data-skill="luck_1" data-cost="1" onclick="upgradeSkill('luck_1')">
+                                <div class="skill-icon"><i class="fas fa-dice"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Фортуна I</div>
+                                    <div class="skill-desc">+5% к дропу</div>
+                                </div>
+                                <div class="skill-level"><span id="luck_1_level">0</span>/5</div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="luck_2" data-cost="2" data-requires="luck_1:3" onclick="upgradeSkill('luck_2')">
+                                <div class="skill-icon"><i class="fas fa-gem"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Фортуна II</div>
+                                    <div class="skill-desc">+10% к редкому дропу</div>
+                                </div>
+                                <div class="skill-level"><span id="luck_2_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                            <div class="skill-connector"></div>
+                            <div class="skill-node locked" data-skill="luck_3" data-cost="3" data-requires="luck_2:3" onclick="upgradeSkill('luck_3')">
+                                <div class="skill-icon"><i class="fas fa-crown"></i></div>
+                                <div class="skill-info">
+                                    <div class="skill-name">Джекпот</div>
+                                    <div class="skill-desc">Шанс x2 награды</div>
+                                </div>
+                                <div class="skill-level"><span id="luck_3_level">0</span>/5</div>
+                                <div class="skill-lock"><i class="fas fa-lock"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -6,6 +6,9 @@ const { db } = require('../database');
 const GRID_WIDTH = 5;
 const GRID_HEIGHT = 7;
 
+// Хранилище предметов на земле (в памяти)
+const groundItems = new Map();
+
 const CLOTHING_COMPONENTS = {
     'hat': 0, 'head': 0,
     'mask': 1,
@@ -19,6 +22,19 @@ const CLOTHING_COMPONENTS = {
     'glasses': 1,
     'watch': 6
 };
+
+// ===== БЕЗОПАСНЫЙ ВЫЗОВ КЛИЕНТСКОГО СОБЫТИЯ =====
+function safeCall(player, eventName, args = []) {
+    try {
+        if (player && mp.players.exists(player)) {
+            player.call(eventName, args);
+            return true;
+        }
+    } catch (err) {
+        // Игрок отключился - игнорируем
+    }
+    return false;
+}
 
 // ===== ПОЛУЧЕНИЕ ИНВЕНТАРЯ ПЕРСОНАЖА =====
 async function getCharacterInventory(characterId) {
@@ -119,7 +135,7 @@ async function getCharacterEquipment(characterId) {
 // ===== ПОИСК СВОБОДНОГО МЕСТА С УЧЁТОМ РАЗМЕРА =====
 async function findFreeSlotForSize(characterId, width, height) {
     try {
-        // Получаем ВСЕ предметы с их размерами
+        // Получаем ВСЕ предметы с их р��змерами
         const [items] = await db.query(`
             SELECT ci.slot, i.size_width, i.size_height
             FROM character_inventory ci
@@ -243,7 +259,7 @@ async function checkCanPlaceServer(characterId, startSlot, width, height, ignore
 
 // ===== ОТКРЫТИЕ ИНВЕНТАРЯ =====
 mp.events.add('inventory:open', async (player) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const inventory = await getCharacterInventory(player.characterId);
@@ -276,7 +292,7 @@ mp.events.add('inventory:open', async (player) => {
             hunger: player.hunger || 100
         };
         
-        player.call('client:openInventory', [JSON.stringify(inventoryData), JSON.stringify(charData)]);
+        safeCall(player, 'client:openInventory', [JSON.stringify(inventoryData), JSON.stringify(charData)]);
         
     } catch (err) {
         console.error('[Inventory] Ошибка открытия инвентаря:', err);
@@ -285,7 +301,7 @@ mp.events.add('inventory:open', async (player) => {
 
 // ===== ИСПОЛЬЗОВАНИЕ ПРЕДМЕТА =====
 mp.events.add('inventory:useItem', async (player, slot) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const [items] = await db.query(`
@@ -317,7 +333,7 @@ mp.events.add('inventory:useItem', async (player, slot) => {
                 used = await equipWeapon(player, item, slot);
                 break;
             default:
-                player.outputChatBox('!{#ff9800}Этот предмет нельзя использовать');
+                safeCall(player, 'client:notify', ['warning', 'Предмет', 'Этот предмет нельзя использовать']);
                 break;
         }
         
@@ -340,6 +356,8 @@ mp.events.add('inventory:useItem', async (player, slot) => {
 
 // ===== ИСПОЛЬЗОВАНИЕ CONSUMABLE =====
 async function useConsumable(player, item) {
+    if (!player || !mp.players.exists(player)) return false;
+    
     const itemName = item.name.toLowerCase();
     
     // Еда
@@ -408,6 +426,8 @@ function getThirstRestore(itemName) {
 
 // ===== ИСПОЛЬЗОВАНИЕ MEDICAL =====
 async function useMedical(player, item) {
+    if (!player || !mp.players.exists(player)) return false;
+    
     const itemName = item.name.toLowerCase();
     
     if (itemName.includes('bandage')) {
@@ -416,7 +436,7 @@ async function useMedical(player, item) {
         } else {
             player.health = Math.min(100, player.health + 20);
         }
-        player.outputChatBox('!{#e91e63}🩹 Вы использовали бинт (+20 HP)');
+        player.outputChatBox('!{#e91e63}🩹 Вы использов��ли бинт (+20 HP)');
         return true;
     }
     
@@ -451,6 +471,8 @@ async function useMedical(player, item) {
 
 // ===== ЭКИПИРОВКА ОДЕЖДЫ =====
 async function equipClothing(player, item, fromSlot) {
+    if (!player || !mp.players.exists(player)) return false;
+    
     try {
         let modelData = item.model_data ? (typeof item.model_data === 'string' ? JSON.parse(item.model_data) : item.model_data) : null;
         
@@ -518,6 +540,8 @@ async function equipClothing(player, item, fromSlot) {
 
 // ===== ЭКИПИРОВКА ОРУЖИЯ =====
 async function equipWeapon(player, item, fromSlot) {
+    if (!player || !mp.players.exists(player)) return false;
+    
     try {
         let modelData = item.model_data ? (typeof item.model_data === 'string' ? JSON.parse(item.model_data) : item.model_data) : null;
         
@@ -609,7 +633,7 @@ async function equipWeapon(player, item, fromSlot) {
 
 // ===== СНЯТИЕ ЭКИПИРОВКИ =====
 mp.events.add('inventory:unequipItem', async (player, slotType) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const [equipment] = await db.query(`
@@ -676,7 +700,7 @@ mp.events.add('inventory:unequipItem', async (player, slotType) => {
 
 // ===== ПЕРЕМЕЩЕНИЕ ПРЕДМЕТА =====
 mp.events.add('inventory:moveItem', async (player, fromJson, toJson) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const from = typeof fromJson === 'string' ? JSON.parse(fromJson) : fromJson;
@@ -732,7 +756,7 @@ mp.events.add('inventory:moveItem', async (player, fromJson, toJson) => {
 
 // ===== ВЫБРОС ПРЕДМЕТА НА ЗЕМЛЮ =====
 mp.events.add('inventory:dropItem', async (player, slot, quantity) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const [items] = await db.query(`
@@ -768,6 +792,17 @@ mp.events.add('inventory:dropItem', async (player, slot, quantity) => {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [item.item_id, dropQuantity, item.metadata, dropPos.x, dropPos.y, dropPos.z, player.dimension, expiresAt]);
             
+            // Добавляем в Map для отслеживания
+            groundItems.set(result.insertId, {
+                id: result.insertId,
+                itemId: item.item_id,
+                name: item.name,
+                displayName: item.display_name,
+                quantity: dropQuantity,
+                position: dropPos,
+                dimension: player.dimension
+            });
+            
             createGroundItemObject(result.insertId, item, dropQuantity, dropPos, player.dimension);
         } catch (dbErr) {
             console.log('[Inventory] Таблица ground_items не найдена');
@@ -784,22 +819,22 @@ mp.events.add('inventory:dropItem', async (player, slot, quantity) => {
 
 // ===== ПОДБОР ПРЕДМЕТА С ЗЕМЛИ =====
 mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
-        const [groundItems] = await db.query(`
+        const [groundItemsDb] = await db.query(`
             SELECT gi.*, i.name, i.display_name, i.max_stack, i.type, i.size_width, i.size_height
             FROM ground_items gi
             JOIN items i ON gi.item_id = i.id
             WHERE gi.id = ? AND gi.dimension = ?
         `, [groundItemId, player.dimension]);
         
-        if (groundItems.length === 0) {
+        if (groundItemsDb.length === 0) {
             player.outputChatBox('!{#f44336}Предмет не найден');
             return;
         }
         
-        const groundItem = groundItems[0];
+        const groundItem = groundItemsDb[0];
         const width = groundItem.size_width || 1;
         const height = groundItem.size_height || 1;
         
@@ -835,6 +870,9 @@ mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
                     // Весь предмет добавлен в стак
                     await db.query('DELETE FROM ground_items WHERE id = ?', [groundItemId]);
                     
+                    // Удаляем из Map
+                    groundItems.delete(groundItemId);
+                    
                     const obj = groundItemObjects.get(groundItemId);
                     if (obj && mp.objects.exists(obj)) obj.destroy();
                     groundItemObjects.delete(groundItemId);
@@ -861,6 +899,9 @@ mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
         // Удаляем с земли
         await db.query('DELETE FROM ground_items WHERE id = ?', [groundItemId]);
         
+        // Удаляем из Map
+        groundItems.delete(groundItemId);
+        
         const obj = groundItemObjects.get(groundItemId);
         if (obj && mp.objects.exists(obj)) obj.destroy();
         groundItemObjects.delete(groundItemId);
@@ -883,7 +924,7 @@ mp.events.add('inventory:pickupItem', async (player, groundItemId) => {
 
 // ===== ВЫБРОС ПРЕДМЕТА ИЗ ЭКИПИРОВКИ =====
 mp.events.add('inventory:dropEquipment', async (player, slotType) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         const [equipment] = await db.query(`
@@ -947,6 +988,17 @@ mp.events.add('inventory:dropEquipment', async (player, slotType) => {
                 VALUES (?, 1, NULL, ?, ?, ?, ?, ?)
             `, [item.item_id, dropPos.x, dropPos.y, dropPos.z, player.dimension, expiresAt]);
             
+            // Добавляем в Map
+            groundItems.set(result.insertId, {
+                id: result.insertId,
+                itemId: item.item_id,
+                name: item.name,
+                displayName: item.display_name,
+                quantity: 1,
+                position: dropPos,
+                dimension: player.dimension
+            });
+            
             createGroundItemObject(result.insertId, item, 1, dropPos, player.dimension);
         } catch (dbErr) {
             console.log('[Inventory] Таблица ground_items не найдена');
@@ -992,44 +1044,53 @@ function createGroundItemObject(groundItemId, item, quantity, position, dimensio
     }
 }
 
-async function getNearbyGroundItems(player, radius = 10) {
+// ===== ОБНОВЛЕНИЕ ПРЕДМЕТОВ НА ЗЕМЛЕ (ИСПРАВЛЕНО) =====
+async function updateNearbyGroundItems(player) {
+    // Проверяем что игрок существует и онлайн
+    if (!player || !mp.players.exists(player) || !player.characterId) {
+        return;
+    }
+    
     try {
-        const [items] = await db.query(`
-            SELECT gi.*, i.name, i.display_name, i.type, i.weight, i.icon
-            FROM ground_items gi
-            JOIN items i ON gi.item_id = i.id
-            WHERE gi.dimension = ?
-            AND gi.position_x BETWEEN ? AND ?
-            AND gi.position_y BETWEEN ? AND ?
-        `, [
-            player.dimension,
-            player.position.x - radius, player.position.x + radius,
-            player.position.y - radius, player.position.y + radius
-        ]);
+        const pos = player.position;
+        if (!pos) return;
         
-        return items.map(item => ({
-            id: item.id,
-            itemId: item.item_id,
-            name: item.display_name || item.name,
-            type: item.type,
-            quantity: item.quantity,
-            weight: item.weight,
-            icon: item.icon,
-            position: { x: item.position_x, y: item.position_y, z: item.position_z },
-            distance: getDistance(player.position, { x: item.position_x, y: item.position_y, z: item.position_z })
-        })).sort((a, b) => a.distance - b.distance);
+        const nearbyItems = [];
+        
+        // Используем groundItems Map
+        groundItems.forEach((item, id) => {
+            if (item.dimension !== player.dimension) return;
+            
+            const distance = Math.sqrt(
+                Math.pow(item.position.x - pos.x, 2) +
+                Math.pow(item.position.y - pos.y, 2) +
+                Math.pow(item.position.z - pos.z, 2)
+            );
+            
+            if (distance <= 5) {
+                nearbyItems.push({
+                    id: id,
+                    name: item.name,
+                    displayName: item.displayName,
+                    quantity: item.quantity,
+                    distance: distance.toFixed(1)
+                });
+            }
+        });
+        
+        // Повторная проверка перед отправкой
+        safeCall(player, 'client:updateGroundItems', [JSON.stringify(nearbyItems)]);
+        
     } catch (err) {
-        console.error('[Inventory] Ошибка получения предметов на земле:', err);
-        return [];
+        // Игнорируем ошибки для отключённых игроков
+        if (err.message && !err.message.includes('Expired')) {
+            console.error('[Inventory] Ошибка обновления предметов:', err);
+        }
     }
 }
 
-async function updateNearbyGroundItems(player) {
-    const nearbyItems = await getNearbyGroundItems(player);
-    player.call('client:updateGroundItems', [JSON.stringify(nearbyItems)]);
-}
-
 mp.events.add('inventory:requestGroundItems', async (player) => {
+    if (!player || !mp.players.exists(player)) return;
     await updateNearbyGroundItems(player);
 });
 
@@ -1042,28 +1103,36 @@ function getDistance(pos1, pos2) {
 
 // ===== ОТПРАВКА ОБНОВЛЕНИЯ ИНВЕНТАРЯ =====
 async function sendInventoryUpdate(player) {
-    const inventory = await getCharacterInventory(player.characterId);
-    const equipment = await getCharacterEquipment(player.characterId);
-    const quickSlots = await getQuickSlots(player.characterId);
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
-    player.call('client:updateInventory', [JSON.stringify({
-        main: inventory,
-        equipment: equipment,
-        quickSlots: quickSlots
-    })]);
+    try {
+        const inventory = await getCharacterInventory(player.characterId);
+        const equipment = await getCharacterEquipment(player.characterId);
+        const quickSlots = await getQuickSlots(player.characterId);
+        
+        safeCall(player, 'client:updateInventory', [JSON.stringify({
+            main: inventory,
+            equipment: equipment,
+            quickSlots: quickSlots
+        })]);
+    } catch (err) {
+        console.error('[Inventory] Ошибка отправки обновления:', err);
+    }
 }
 
 // ===== СОХРАНЕНИЕ ОДЕЖДЫ =====
 function saveCharacterClothes(player) {
+    if (!player || !mp.players.exists(player)) return;
+    
     try {
-        player.call('client:requestClothesData');
+        safeCall(player, 'client:requestClothesData');
     } catch (err) {
         console.error('[Inventory] Ошибка запроса сохранения одежды:', err);
     }
 }
 
 mp.events.add('inventory:saveClothesData', async (player, clothesJson) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     try {
         await db.query('UPDATE characters SET clothes = ? WHERE id = ?', [clothesJson, player.characterId]);
     } catch (err) {
@@ -1073,6 +1142,8 @@ mp.events.add('inventory:saveClothesData', async (player, clothesJson) => {
 
 // ===== ЗАГРУЗКА ОДЕЖДЫ И ОРУЖИЯ =====
 async function loadCharacterClothes(player, characterId) {
+    if (!player || !mp.players.exists(player)) return;
+    
     try {
         const [equipment] = await db.query(`
             SELECT i.model_data, i.type
@@ -1083,7 +1154,7 @@ async function loadCharacterClothes(player, characterId) {
         
         if (equipment.length > 0) {
             equipment.forEach(item => {
-                if (item.model_data) {
+                if (item.model_data && player && mp.players.exists(player)) {
                     const modelData = typeof item.model_data === 'string' ? JSON.parse(item.model_data) : item.model_data;
                     if (modelData.slotType) {
                         const componentId = CLOTHING_COMPONENTS[modelData.slotType];
@@ -1105,13 +1176,15 @@ async function loadCharacterClothes(player, characterId) {
         
         const clothes = typeof result[0].clothes === 'string' ? JSON.parse(result[0].clothes) : result[0].clothes;
         
-        for (let i = 0; i < 12; i++) {
-            player.setClothes(i, clothes[`comp_${i}_drawable`] || 0, clothes[`comp_${i}_texture`] || 0, 0);
-        }
-        for (let i = 0; i < 3; i++) {
-            const drawable = clothes[`prop_${i}_drawable`];
-            if (drawable !== undefined && drawable >= 0) {
-                player.setProp(i, drawable, clothes[`prop_${i}_texture`] || 0);
+        if (player && mp.players.exists(player)) {
+            for (let i = 0; i < 12; i++) {
+                player.setClothes(i, clothes[`comp_${i}_drawable`] || 0, clothes[`comp_${i}_texture`] || 0, 0);
+            }
+            for (let i = 0; i < 3; i++) {
+                const drawable = clothes[`prop_${i}_drawable`];
+                if (drawable !== undefined && drawable >= 0) {
+                    player.setProp(i, drawable, clothes[`prop_${i}_texture`] || 0);
+                }
             }
         }
     } catch (err) {
@@ -1120,6 +1193,8 @@ async function loadCharacterClothes(player, characterId) {
 }
 
 async function loadCharacterWeapons(player, characterId) {
+    if (!player || !mp.players.exists(player)) return;
+    
     try {
         const [weapons] = await db.query(`
             SELECT i.model_data, i.display_name
@@ -1129,7 +1204,7 @@ async function loadCharacterWeapons(player, characterId) {
         `, [characterId]);
         
         weapons.forEach(weapon => {
-            if (weapon.model_data) {
+            if (weapon.model_data && player && mp.players.exists(player)) {
                 const modelData = typeof weapon.model_data === 'string' ? JSON.parse(weapon.model_data) : weapon.model_data;
                 if (modelData.weaponHash) {
                     player.giveWeapon(mp.joaat(modelData.weaponHash), modelData.ammo || 100);
@@ -1180,7 +1255,7 @@ async function addItem(characterId, itemName, quantity = 1, metadata = null) {
         const freeSlot = await findFreeSlotForSize(characterId, itemWidth, itemHeight);
         if (freeSlot === -1) {
             mp.players.forEach(p => {
-                if (p.characterId === characterId) {
+                if (p && mp.players.exists(p) && p.characterId === characterId) {
                     p.outputChatBox(`!{#f44336}Инвентарь полон! Нет места для ${item.display_name || item.name}`);
                 }
             });
@@ -1202,7 +1277,7 @@ async function addItem(characterId, itemName, quantity = 1, metadata = null) {
 
 function notifyPlayer(characterId, item, quantity) {
     mp.players.forEach(p => {
-        if (p.characterId === characterId) {
+        if (p && mp.players.exists(p) && p.characterId === characterId) {
             p.outputChatBox(`!{#4caf50}Получен предмет: ${item.display_name || item.name} x${quantity}`);
             sendInventoryUpdate(p);
         }
@@ -1211,7 +1286,7 @@ function notifyPlayer(characterId, item, quantity) {
 
 // ===== РАЗДЕЛЕНИЕ ПРЕДМЕТА =====
 mp.events.add('inventory:splitItem', async (player, slot, quantity) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         slot = parseInt(slot);
@@ -1278,7 +1353,7 @@ global.loadCharacterWeapons = loadCharacterWeapons;
 
 // ===== КОМАНДЫ =====
 mp.events.addCommand('giveitem', async (player, fullText) => {
-    if (!player.characterId) {
+    if (!player || !mp.players.exists(player) || !player.characterId) {
         player.outputChatBox('!{#f44336}Вы не выбрали персонажа!');
         return;
     }
@@ -1299,7 +1374,7 @@ mp.events.addCommand('giveitem', async (player, fullText) => {
 });
 
 mp.events.addCommand('clearinventory', async (player) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     try {
         await db.query('DELETE FROM character_inventory WHERE character_id = ?', [player.characterId]);
         player.outputChatBox('!{#4caf50}Инвентарь очищен!');
@@ -1310,6 +1385,7 @@ mp.events.addCommand('clearinventory', async (player) => {
 });
 
 mp.events.addCommand('items', async (player) => {
+    if (!player || !mp.players.exists(player)) return;
     try {
         const [items] = await db.query('SELECT name, display_name, type, size_width, size_height FROM items');
         player.outputChatBox('!{#2196f3}===== ДОСТУПНЫЕ ПРЕДМЕТЫ =====');
@@ -1321,10 +1397,12 @@ mp.events.addCommand('items', async (player) => {
     }
 });
 
-// Загрузка предметов на земле при старте
+// ===== ЗАГРУЗКА ПРЕДМЕТОВ НА ЗЕМЛЕ ПРИ СТАРТЕ =====
 async function loadGroundItems() {
     try {
+        // Удаляем просроченные предметы
         await db.query('DELETE FROM ground_items WHERE expires_at < NOW()');
+        
         const [items] = await db.query(`
             SELECT gi.*, i.name, i.display_name, i.type
             FROM ground_items gi
@@ -1332,9 +1410,27 @@ async function loadGroundItems() {
         `);
         
         items.forEach(item => {
+            // Добавляем в Map
+            groundItems.set(item.id, {
+                id: item.id,
+                itemId: item.item_id,
+                name: item.name,
+                displayName: item.display_name,
+                quantity: item.quantity,
+                position: { x: item.position_x, y: item.position_y, z: item.position_z },
+                dimension: item.dimension
+            });
+            
             createGroundItemObject(item.id, {
-                item_id: item.item_id, name: item.name, display_name: item.display_name, type: item.type
-            }, item.quantity, { x: item.position_x, y: item.position_y, z: item.position_z }, item.dimension);
+                item_id: item.item_id, 
+                name: item.name, 
+                display_name: item.display_name, 
+                type: item.type
+            }, item.quantity, { 
+                x: item.position_x, 
+                y: item.position_y, 
+                z: item.position_z 
+            }, item.dimension);
         });
         
         console.log(`[Inventory] Загружено предметов на земле: ${items.length}`);
@@ -1343,18 +1439,47 @@ async function loadGroundItems() {
     }
 }
 
+// ===== ОЧИСТКА ПРОСРОЧЕННЫХ ПРЕДМЕТОВ =====
 setInterval(async () => {
     try {
         const [expired] = await db.query('SELECT id FROM ground_items WHERE expires_at < NOW()');
+        
         for (const item of expired) {
+            // Удаляем объект
             const obj = groundItemObjects.get(item.id);
             if (obj && mp.objects.exists(obj)) obj.destroy();
             groundItemObjects.delete(item.id);
+            
+            // Удаляем из Map
+            groundItems.delete(item.id);
         }
+        
         await db.query('DELETE FROM ground_items WHERE expires_at < NOW()');
-    } catch (err) {}
-}, 5 * 60 * 1000);
+        
+        if (expired.length > 0) {
+            console.log(`[Inventory] Удалено просроченных предметов: ${expired.length}`);
+        }
+    } catch (err) {
+        // Игнорируем ошибки
+    }
+}, 5 * 60 * 1000); // Каждые 5 минут
 
+// ===== ПЕРИОДИЧЕСКОЕ ОБНОВЛЕНИЕ ПРЕДМЕТОВ НА ЗЕМЛЕ ДЛЯ ИГРОКОВ =====
+setInterval(() => {
+    mp.players.forEach((player) => {
+        // Проверяем что игрок существует
+        if (!player || !mp.players.exists(player)) return;
+        if (!player.characterId) return;
+        
+        try {
+            updateNearbyGroundItems(player);
+        } catch (err) {
+            // Игнорируем ошибки
+        }
+    });
+}, 5000); // Каждые 5 секунд
+
+// Загружаем предметы на земле через 3 секунды после старта
 setTimeout(loadGroundItems, 3000);
 
 // ===== СИСТЕМА БЫСТРЫХ СЛОТОВ =====
@@ -1398,7 +1523,7 @@ async function getQuickSlots(characterId) {
 
 // Назначение предмета на быстрый слот
 mp.events.add('inventory:assignQuickSlot', async (player, inventorySlot, quickSlotIndex) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         inventorySlot = parseInt(inventorySlot);
@@ -1458,7 +1583,7 @@ mp.events.add('inventory:assignQuickSlot', async (player, inventorySlot, quickSl
 
 // Очистка быстрого слота
 mp.events.add('inventory:clearQuickSlot', async (player, quickSlotIndex) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         quickSlotIndex = parseInt(quickSlotIndex);
@@ -1478,7 +1603,7 @@ mp.events.add('inventory:clearQuickSlot', async (player, quickSlotIndex) => {
 
 // Использование быстрого слота
 mp.events.add('inventory:useQuickSlot', async (player, quickSlotIndex) => {
-    if (!player.characterId) return;
+    if (!player || !mp.players.exists(player) || !player.characterId) return;
     
     try {
         quickSlotIndex = parseInt(quickSlotIndex);

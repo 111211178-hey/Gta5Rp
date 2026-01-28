@@ -9,117 +9,134 @@ body {
     background: transparent;
     display: flex;
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-end;
     height: 100vh;
-    padding-right: 50px;
+    padding: 20px;
 }
 
 /* ===== PHONE FRAME ===== */
 .phone {
-    width: 340px;
-    height: 680px;
-    background: linear-gradient(145deg, #1a1a2e, #16213e);
-    border-radius: 45px;
-    padding: 12px;
-    box-shadow: 
-        0 30px 100px rgba(0, 0, 0, 0.6),
-        inset 0 0 0 3px rgba(255, 255, 255, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    width: 280px;
+    height: 520px;
+    background: #000;
+    border-radius: 35px;
+    padding: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     position: relative;
 }
 
 .phone::before {
     content: '';
     position: absolute;
-    top: 18px;
+    top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80px;
-    height: 25px;
-    background: #000;
-    border-radius: 15px;
+    width: 60px;
+    height: 20px;
+    background: #1a1a1a;
+    border-radius: 10px;
     z-index: 10;
 }
 
 .phone-screen {
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #0f0f1a, #1a1a2e);
-    border-radius: 35px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    border-radius: 28px;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ===== STATUS BAR ===== */
 .status-bar {
-    height: 40px;
+    height: 30px;
     background: transparent;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 25px;
+    padding: 0 15px;
     padding-top: 5px;
-    font-size: 12px;
+    font-size: 11px;
     color: white;
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .status-left {
     display: flex;
     align-items: center;
-    gap: 5px;
 }
 
 .status-right {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 10px;
 }
 
 .signal-bars {
     display: flex;
-    gap: 2px;
+    gap: 1px;
     align-items: flex-end;
 }
 
 .signal-bar {
-    width: 3px;
+    width: 2px;
     background: white;
     border-radius: 1px;
 }
 
 /* ===== CONTENT AREA ===== */
 .phone-content {
-    height: calc(100% - 40px - 65px);
-    overflow-y: auto;
-    padding: 15px 20px;
+    flex: 1;
+    overflow: hidden;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== APP PAGES ===== */
+.app-page {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+}
+
+.app-page.active {
+    display: flex;
 }
 
 /* ===== HOME SCREEN ===== */
 .home-screen {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .home-time {
-    font-size: 64px;
+    font-size: 48px;
     font-weight: 200;
     color: white;
-    margin-top: 25px;
+    text-align: center;
+    margin-top: 15px;
     letter-spacing: -2px;
 }
 
 .home-date {
-    font-size: 18px;
+    font-size: 14px;
     color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 35px;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
 .app-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    padding: 10px 5px;
+    gap: 12px;
+    padding: 5px;
+    flex: 1;
 }
 
 .app-icon {
@@ -139,22 +156,21 @@ body {
 }
 
 .app-icon .icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 20px;
     color: white;
-    margin-bottom: 6px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    margin-bottom: 4px;
 }
 
 .app-icon .name {
-    font-size: 11px;
+    font-size: 9px;
     color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
+    text-align: center;
 }
 
 /* App Icon Colors */
@@ -167,199 +183,143 @@ body {
 .icon.gallery-app { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
 .icon.settings-app { background: linear-gradient(135deg, #8e8e93, #636366); }
 
-/* ===== APP PAGES ===== */
-.app-page {
-    display: none;
-    height: 100%;
-}
-
-.app-page.active {
-    display: block;
-}
-
+/* ===== APP HEADER ===== */
 .app-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 0 15px;
+    gap: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .back-btn {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-}
-
-.back-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
 }
 
 .app-title {
     flex: 1;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: white;
 }
 
 .header-btn {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     background: rgba(0, 122, 255, 0.2);
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     color: #007aff;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 12px;
 }
 
 /* ===== DIAL PAD ===== */
 .dial-display {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 15px;
+    border-radius: 10px;
+    padding: 12px;
     text-align: center;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 300;
     color: white;
-    margin-bottom: 15px;
-    min-height: 60px;
+    margin-bottom: 10px;
     letter-spacing: 2px;
+    flex-shrink: 0;
 }
 
 .dial-pad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .dial-key {
-    height: 55px;
+    height: 44px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 50%;
     color: white;
-    font-size: 24px;
-    font-weight: 400;
+    font-size: 20px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-}
-
-.dial-key:hover {
-    background: rgba(255, 255, 255, 0.2);
 }
 
 .dial-key:active {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(0.95);
 }
 
 .dial-key span {
-    font-size: 9px;
+    font-size: 7px;
     color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 1px;
 }
 
 .dial-actions {
     display: flex;
     justify-content: center;
-    gap: 25px;
-    margin-bottom: 20px;
+    gap: 20px;
+    flex-shrink: 0;
 }
 
 .dial-action-btn {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border: none;
     border-radius: 50%;
     color: white;
-    font-size: 22px;
+    font-size: 18px;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
-.dial-action-btn.call {
-    background: linear-gradient(135deg, #4cd964, #34c759);
-}
-
-.dial-action-btn.delete {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.dial-action-btn.clear {
-    background: rgba(255, 59, 48, 0.2);
-    color: #ff3b30;
-}
-
-/* ===== SEARCH BOX ===== */
-.search-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-}
-
-.search-box i {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.search-box input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 14px;
-    outline: none;
-}
-
-.search-box input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-}
+.dial-action-btn.call { background: linear-gradient(135deg, #4cd964, #34c759); }
+.dial-action-btn.delete { background: rgba(255, 255, 255, 0.1); }
+.dial-action-btn.clear { background: rgba(255, 59, 48, 0.2); color: #ff3b30; }
 
 /* ===== LISTS ===== */
 .list-container {
-    max-height: 350px;
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .section-title {
-    font-size: 13px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.5);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 15px 0 10px;
+    margin: 8px 0 6px;
+    flex-shrink: 0;
 }
 
 /* ===== CONTACT ITEMS ===== */
 .contact-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 10px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 14px;
-    margin-bottom: 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
 .contact-item:hover {
@@ -367,54 +327,53 @@ body {
 }
 
 .contact-avatar {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea, #764ba2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     color: white;
+    flex-shrink: 0;
 }
 
 .contact-info {
     flex: 1;
+    min-width: 0;
 }
 
 .contact-name {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .contact-phone {
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.5);
-    margin-top: 2px;
 }
 
 .contact-actions {
     display: flex;
-    gap: 8px;
+    gap: 4px;
 }
 
 .contact-action {
-    width: 38px;
-    height: 38px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.contact-action:hover {
-    transform: scale(1.1);
+    font-size: 11px;
 }
 
 .contact-action.call { background: #4cd964; color: white; }
@@ -425,28 +384,27 @@ body {
 .location-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px;
+    gap: 10px;
+    padding: 10px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 14px;
-    margin-bottom: 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
 .location-item:hover {
     background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
 }
 
 .location-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .location-info {
@@ -454,76 +412,68 @@ body {
 }
 
 .location-name {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     color: white;
 }
 
 .location-desc {
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.5);
-    margin-top: 2px;
 }
 
 .location-arrow {
     color: rgba(255, 255, 255, 0.3);
+    font-size: 10px;
 }
 
 /* ===== FORMS ===== */
 .form-card {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 18px;
-    margin-bottom: 15px;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .form-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: white;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .input-group {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
 }
 
 .input-group label {
     display: block;
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 6px;
-    font-weight: 500;
+    margin-bottom: 4px;
 }
 
 .input-group input,
 .input-group textarea {
     width: 100%;
-    padding: 12px 14px;
+    padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 8px;
     color: white;
-    font-size: 14px;
-    transition: all 0.2s;
+    font-size: 13px;
 }
 
 .input-group input:focus,
 .input-group textarea:focus {
     outline: none;
     border-color: #007aff;
-    background: rgba(0, 0, 0, 0.4);
-}
-
-.input-group input::placeholder,
-.input-group textarea::placeholder {
-    color: rgba(255, 255, 255, 0.3);
 }
 
 .form-buttons {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
 }
 
 .form-buttons .btn {
@@ -532,228 +482,220 @@ body {
 
 /* ===== BUTTONS ===== */
 .btn {
-    padding: 14px 20px;
+    padding: 10px 16px;
     border: none;
-    border-radius: 12px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-}
-
-.btn:active {
-    transform: translateY(0);
-}
-
-.btn-primary { background: linear-gradient(135deg, #007aff, #0056b3); color: white; }
-.btn-success { background: linear-gradient(135deg, #4cd964, #34c759); color: white; }
-.btn-danger { background: linear-gradient(135deg, #ff3b30, #ff2d55); color: white; }
+.btn-primary { background: #007aff; color: white; }
+.btn-success { background: #4cd964; color: white; }
+.btn-danger { background: #ff3b30; color: white; }
 .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; }
+
+/* ===== SEARCH BOX ===== */
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.search-box i {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+}
+
+.search-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 13px;
+    outline: none;
+}
 
 /* ===== BANK ===== */
 .bank-card {
     background: linear-gradient(135deg, #667eea, #764ba2);
-    border-radius: 20px;
-    padding: 25px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.bank-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .bank-card-logo {
-    font-size: 14px;
+    font-size: 10px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.8);
-    letter-spacing: 3px;
-    margin-bottom: 25px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
 }
 
 .bank-card-number {
-    font-size: 16px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 3px;
-    margin-bottom: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
 }
 
 .bank-card-balance {
     display: flex;
     flex-direction: column;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .bank-card-balance .label {
-    font-size: 11px;
+    font-size: 9px;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
 }
 
 .bank-card-balance .amount {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 700;
     color: white;
 }
 
 .bank-card-holder {
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 .bank-actions {
     display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .bank-action {
     flex: 1;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 14px;
-    padding: 15px;
+    border-radius: 10px;
+    padding: 12px 8px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.bank-action:hover {
-    background: rgba(255, 255, 255, 0.1);
 }
 
 .bank-action-icon {
-    width: 45px;
-    height: 45px;
+    width: 36px;
+    height: 36px;
     background: rgba(103, 126, 234, 0.2);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 8px;
+    margin: 0 auto 6px;
     color: #667eea;
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .bank-action span {
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.8);
 }
 
-/* ===== CAMERA & GALLERY ===== */
+/* ===== CAMERA & EMPTY STATE ===== */
 .camera-placeholder,
 .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 300px;
+    flex: 1;
     color: rgba(255, 255, 255, 0.4);
 }
 
 .camera-placeholder i,
 .empty-state i {
-    font-size: 60px;
-    margin-bottom: 15px;
+    font-size: 40px;
+    margin-bottom: 10px;
 }
 
 .camera-placeholder p,
 .empty-state p {
-    font-size: 14px;
-    margin-bottom: 20px;
+    font-size: 12px;
+    margin-bottom: 15px;
 }
 
 /* ===== SETTINGS ===== */
 .settings-profile {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 18px;
-    margin-bottom: 20px;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .settings-avatar {
-    width: 60px;
-    height: 60px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea, #764ba2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    font-weight: 600;
-    color: white;
-}
-
-.settings-user-info {
-    flex: 1;
-}
-
-.settings-name {
     font-size: 18px;
     font-weight: 600;
     color: white;
 }
 
+.settings-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
 .settings-phone {
-    font-size: 13px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.5);
-    margin-top: 3px;
 }
 
 .settings-section {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .settings-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
-    transition: background 0.2s;
 }
 
 .settings-item:last-child {
     border-bottom: none;
 }
 
-.settings-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
 .settings-item-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     background: rgba(103, 126, 234, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #667eea;
+    font-size: 12px;
 }
 
 .settings-item-info {
@@ -761,60 +703,54 @@ body {
 }
 
 .settings-item-title {
-    font-size: 14px;
+    font-size: 13px;
     color: white;
 }
 
 .settings-item-desc {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.4);
-    margin-top: 2px;
 }
 
 .settings-item > i {
     color: rgba(255, 255, 255, 0.3);
-    font-size: 12px;
+    font-size: 10px;
 }
 
 /* ===== BOTTOM NAVIGATION ===== */
 .bottom-nav {
-    height: 65px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(20px);
+    height: 50px;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: space-around;
     align-items: center;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .nav-btn {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.4);
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    border-radius: 12px;
+    border-radius: 10px;
 }
 
-.nav-btn:hover {
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.05);
-}
-
+.nav-btn:hover,
 .nav-btn.active {
     color: white;
 }
 
 .home-indicator {
-    width: 130px;
-    height: 5px;
+    width: 100px;
+    height: 4px;
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
+    border-radius: 2px;
     position: absolute;
-    bottom: 10px;
+    bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
 }
@@ -828,6 +764,8 @@ body {
     right: 0;
     bottom: 0;
     z-index: 100;
+    border-radius: 28px;
+    overflow: hidden;
 }
 
 .call-screen.active {
@@ -849,47 +787,46 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 100px;
+    padding-top: 60px;
 }
 
 .call-avatar {
-    width: 110px;
-    height: 110px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea, #764ba2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 44px;
+    font-size: 32px;
     color: white;
-    margin-bottom: 25px;
-    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+    margin-bottom: 15px;
 }
 
 .call-name {
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 600;
     color: white;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .call-status {
-    font-size: 16px;
+    font-size: 13px;
     color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .call-timer {
-    font-size: 42px;
+    font-size: 28px;
     font-weight: 200;
     color: white;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 }
 
 .call-actions {
     display: flex;
-    gap: 40px;
-    margin-bottom: 60px;
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
 .call-action {
@@ -900,66 +837,55 @@ body {
 }
 
 .call-action-icon {
-    width: 55px;
-    height: 55px;
+    width: 45px;
+    height: 45px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 16px;
     color: white;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-}
-
-.call-action-icon:hover {
-    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 5px;
 }
 
 .call-action span {
-    font-size: 12px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.6);
 }
 
 .call-buttons {
     display: flex;
     justify-content: center;
-    gap: 50px;
+    gap: 40px;
     position: absolute;
-    bottom: 100px;
+    bottom: 60px;
     left: 0;
     right: 0;
 }
 
 .call-btn {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    font-size: 28px;
+    font-size: 22px;
     color: white;
-    transition: all 0.2s;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
 }
 
-.call-btn:hover {
-    transform: scale(1.1);
-}
-
-.call-btn.accept { background: linear-gradient(135deg, #4cd964, #34c759); }
-.call-btn.decline { background: linear-gradient(135deg, #ff3b30, #ff2d55); }
-.call-btn.end { background: linear-gradient(135deg, #ff3b30, #ff2d55); }
+.call-btn.accept { background: #4cd964; }
+.call-btn.decline, .call-btn.end { background: #ff3b30; }
 
 /* ===== CHAT ===== */
 .chat-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 0;
+    gap: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .chat-contact-info {
@@ -967,35 +893,36 @@ body {
 }
 
 .chat-contact-name {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: white;
 }
 
 .chat-contact-phone {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.5);
 }
 
 .chat-messages {
-    height: 280px;
+    flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px 0;
+    gap: 6px;
+    padding: 5px 0;
+    min-height: 0;
 }
 
 .message {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.4;
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    line-height: 1.3;
 }
 
 .message.sent {
-    background: linear-gradient(135deg, #007aff, #0056b3);
+    background: #007aff;
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -1009,68 +936,66 @@ body {
 }
 
 .message-time {
-    font-size: 10px;
+    font-size: 9px;
     color: rgba(255, 255, 255, 0.5);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .chat-input {
     display: flex;
-    gap: 10px;
-    padding: 10px 0;
+    gap: 8px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: auto;
+    flex-shrink: 0;
 }
 
 .chat-input input {
     flex: 1;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-radius: 20px;
+    border-radius: 18px;
     color: white;
-    font-size: 14px;
+    font-size: 12px;
     outline: none;
 }
 
 .chat-input button {
-    width: 44px;
-    height: 44px;
-    background: linear-gradient(135deg, #007aff, #0056b3);
+    width: 36px;
+    height: 36px;
+    background: #007aff;
     border: none;
     border-radius: 50%;
     color: white;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 12px;
 }
 
-/* ===== TOAST NOTIFICATIONS ===== */
+/* ===== TOAST ===== */
 .toast {
     position: fixed;
-    top: 60px;
+    top: 40px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 10px 20px;
+    border-radius: 10px;
     color: white;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     z-index: 1000;
     animation: toastIn 0.3s ease;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
-.toast.success { background: linear-gradient(135deg, #4cd964, #34c759); }
-.toast.error { background: linear-gradient(135deg, #ff3b30, #ff2d55); }
-.toast.info { background: linear-gradient(135deg, #007aff, #0056b3); }
+.toast.success { background: #4cd964; }
+.toast.error { background: #ff3b30; }
+.toast.info { background: #007aff; }
 
 @keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* ===== SCROLLBAR ===== */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }

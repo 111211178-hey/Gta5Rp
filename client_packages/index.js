@@ -2126,6 +2126,321 @@ mp.events.add('client:setWaypoint', (x, y) => {
     mp.game.graphics.notify('~g~Маршрут проложен!');
 });
 
+// ===== МЕНЮ ИГРОКА (F2) =====
+
+let playerMenuBrowser = null;
+let isPlayerMenuOpen = false;
+
+// Открытие по F2
+mp.keys.bind(0x71, true, () => { // F2
+    if (isChatActive || isInventoryOpen || isAdminPanelOpen || isPhoneOpen) return;
+    
+    if (isPlayerMenuOpen) {
+        closePlayerMenu();
+    } else {
+        openPlayerMenu();
+    }
+});
+
+function openPlayerMenu() {
+    if (isPlayerMenuOpen) return;
+    
+    mp.events.callRemote('playermenu:open');
+}
+
+mp.events.add('client:openPlayerMenu', (playerDataJson, skillsDataJson) => {
+    try {
+        playerMenuBrowser = mp.browsers.new('package://cef/playermenu/index.html');
+        
+        setTimeout(() => {
+            mp.gui.cursor.visible = true;
+            if (typeof mp.gui.cursor.show === 'function') {
+                mp.gui.cursor.show(true, true);
+            }
+            
+            if (playerMenuBrowser) {
+                playerMenuBrowser.execute(`loadPlayerData('${playerDataJson.replace(/'/g, "\\'")}')`);
+                playerMenuBrowser.execute(`loadSkillsData('${skillsDataJson.replace(/'/g, "\\'")}')`);
+            }
+        }, 300);
+        
+        isPlayerMenuOpen = true;
+        
+    } catch (err) {
+        console.error('[PlayerMenu] Error:', err);
+    }
+});
+
+function closePlayerMenu() {
+    if (!isPlayerMenuOpen) return;
+    
+    if (playerMenuBrowser) {
+        playerMenuBrowser.destroy();
+        playerMenuBrowser = null;
+    }
+    
+    mp.gui.cursor.visible = false;
+    if (typeof mp.gui.cursor.show === 'function') {
+        mp.gui.cursor.show(false, false);
+    }
+    
+    isPlayerMenuOpen = false;
+}
+
+mp.events.add('cef:closePlayerMenu', () => closePlayerMenu());
+
+// Улучшение навыка
+mp.events.add('cef:upgradeSkill', (skillId, cost) => {
+    mp.events.callRemote('playermenu:upgradeSkill', skillId, cost);
+});
+
+mp.events.add('client:skillUpgraded', (skillId, newLevel, remainingPoints) => {
+    if (playerMenuBrowser) {
+        playerMenuBrowser.execute(`skillUpgraded('${skillId}', ${newLevel}, ${remainingPoints})`);
+    }
+});
+
+// ===== СИСТЕМА УРОВНЕЙ - КЛИЕНТ =====
+
+// Уведомление о повышении уровня
+mp.events.add('client:levelUp', (level, skillPoints, money) => {
+    // Показываем красивое уведомление
+    mp.game.graphics.notify(`~y~★ ~w~Уровень ~g~${level}~w~ достигнут!`);
+    
+    if (skillPoints > 0) {
+        mp.game.graphics.notify(`~g~+${skillPoints} ~w~очков навыков`);
+    }
+    
+    if (money > 0) {
+        mp.game.graphics.notify(`~g~+$${money.toLocaleString()} ~w~на банк`);
+    }
+    
+    // Эффект на экране
+    mp.game.graphics.startScreenEffect('SuccessFranklin', 3000, false);
+    
+    // Звук (опционально)
+    // mp.game.audio.playSoundFrontend(-1, "Mission_Pass_Notify", "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true);
+});
+
+// Обновление полоски опыта (для HUD)
+mp.events.add('client:updateExpBar', (level, exp, maxExp) => {
+    // Можно использовать для обновления HUD
+    console.log(`[Level] Уровень: ${level}, Опыт: ${exp}/${maxExp}`);
+});
+
+// Показ уведомления
+mp.events.add('client:showNotification', (type, message) => {
+    const prefix = type === 'success' ? '~g~' : type === 'error' ? '~r~' : '~y~';
+    mp.game.graphics.notify(`${prefix}${message}`);
+});
+
+// ===== HUD СИСТЕМА =====
+
+let hudBrowser = null;
+let isHudVisible = true;
+let hudCreated = false;
+
+// Создание HUD
+function createHUD() {
+    if (hudBrowser || hudCreated) return;
+    
+    try {
+        hudBrowser = mp.browsers.new('package://cef/hud/index.html');
+        hudCreated = true;
+        console.log('[HUD] ✅ HUD создан');
+        
+        // Запрашиваем начальные данные через 1 секунду
+        setTimeout(() => {
+            if (mp.players.local.characterId) {
+                mp.events.callRemote('hud:requestData');
+            }
+        }, 1000);
+    } catch (err) {
+        console.error('[HUD] Ошибка создания:', err);
+    }
+}
+
+// Создаём HUD при готовности браузера
+mp.events.add('browserDomReady', (browser) => {
+    if (browser === hudBrowser) {
+        console.log('[HUD] DOM готов');
+    }
+});
+
+// Создаём HUD при входе в игру
+mp.events.add('playerReady', () => {
+    setTimeout(createHUD, 2000);
+});
+
+// Альтернативный способ - создаём при спавне персонажа
+mp.events.add('playerSpawn', () => {
+    setTimeout(createHUD, 1000);
+});
+
+// Или при загрузке персонажа
+mp.events.add('client:characterLoaded', () => {
+    setTimeout(createHUD, 500);
+});
+
+// Обновление здоровья и брони каждый кадр
+mp.events.add('render', () => {
+    if (!hudBrowser || !isHudVisible) return;
+    
+    try {
+        const player = mp.players.local;
+        
+        // Здоровье (0-100, в GTA от 100 до 200)
+        const health = Math.max(0, Math.min(100, player.getHealth() - 100));
+        const armor = Math.max(0, Math.min(100, player.getArmour()));
+        
+        hudBrowser.execute(`updateHealth(${health})`);
+        hudBrowser.execute(`updateArmor(${armor})`);
+        
+        // Спидометр
+        if (player.vehicle) {
+            const speed = Math.round(player.vehicle.getSpeed() * 3.6);
+            hudBrowser.execute(`showSpeedometer(true)`);
+            hudBrowser.execute(`updateSpeed(${speed})`);
+        } else {
+            hudBrowser.execute(`showSpeedometer(false)`);
+        }
+    } catch (err) {
+        // Игнорируем ошибки рендера
+    }
+});
+
+// Обновление локации каждые 2 секунды
+setInterval(() => {
+    if (!hudBrowser || !isHudVisible) return;
+    
+    try {
+        const player = mp.players.local;
+        const pos = player.position;
+        
+        // Получаем название улицы
+        const streetHash = mp.game.pathfind.getStreetNameAtCoord(pos.x, pos.y, pos.z, 0, 0);
+        const streetName = mp.game.ui.getStreetNameFromHashKey(streetHash.streetName) || 'Los Santos';
+        const zoneName = mp.game.ui.getLabelText(mp.game.zone.getNameOfZone(pos.x, pos.y, pos.z)) || '';
+        
+        hudBrowser.execute(`updateLocation('${streetName.replace(/'/g, "\\'")}', '${zoneName.replace(/'/g, "\\'")}')`);
+        
+        // Компас
+        const heading = player.getHeading();
+        const direction = getCompassDirection(heading);
+        hudBrowser.execute(`updateCompass('${direction}')`);
+        
+        // Время в игре
+        const hour = mp.game.time.getClockHours();
+        const minute = mp.game.time.getClockMinutes();
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        hudBrowser.execute(`updateGameTime('${timeStr}')`);
+        
+    } catch (err) {
+        // Игнорируем ошибки
+    }
+}, 2000);
+
+function getCompassDirection(heading) {
+    if (heading >= 337.5 || heading < 22.5) return 'N';
+    if (heading >= 22.5 && heading < 67.5) return 'NW';
+    if (heading >= 67.5 && heading < 112.5) return 'W';
+    if (heading >= 112.5 && heading < 157.5) return 'SW';
+    if (heading >= 157.5 && heading < 202.5) return 'S';
+    if (heading >= 202.5 && heading < 247.5) return 'SE';
+    if (heading >= 247.5 && heading < 292.5) return 'E';
+    if (heading >= 292.5 && heading < 337.5) return 'NE';
+    return 'N';
+}
+
+// Получение данных с сервера
+mp.events.add('client:updateHUD', (dataJson) => {
+    if (!hudBrowser) return;
+    
+    try {
+        const data = JSON.parse(dataJson);
+        
+        hudBrowser.execute(`updateMoney(${data.cash || 0}, ${data.bank || 0})`);
+        hudBrowser.execute(`updateLevel(${data.level || 1}, ${data.exp || 0}, ${data.maxExp || 1000})`);
+        hudBrowser.execute(`updateHunger(${data.hunger || 100})`);
+        hudBrowser.execute(`updateThirst(${data.thirst || 100})`);
+        hudBrowser.execute(`updateServerInfo(${data.online || 0}, ${data.myId || 0})`);
+        
+    } catch (e) {
+        console.error('[HUD] Ошибка обновления:', e);
+    }
+});
+
+// Обновление информации о транспорте
+mp.events.add('client:updateVehicleHUD', (dataJson) => {
+    if (!hudBrowser) return;
+    
+    try {
+        const data = JSON.parse(dataJson);
+        
+        hudBrowser.execute(`updateVehicleInfo('${data.name || "Транспорт"}', ${data.fuel || 100}, ${data.engine || 100})`);
+        hudBrowser.execute(`updateVehicleControls(${data.engineOn || false}, ${data.lights || false}, ${data.locked || false}, ${data.belt || false})`);
+        
+    } catch (e) {}
+});
+
+// Уведомления
+mp.events.add('client:notify', (type, title, message, duration) => {
+    if (!hudBrowser) return;
+    
+    const safeTitle = (title || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+    const safeMessage = (message || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+    
+    hudBrowser.execute(`showNotification('${type}', '${safeTitle}', '${safeMessage}', ${duration || 5000})`);
+});
+
+// Подсказки клавиш
+mp.events.add('client:showKeyHint', (key, text, id) => {
+    if (!hudBrowser) return;
+    hudBrowser.execute(`showKeyHint('${key}', '${text}', '${id}')`);
+});
+
+mp.events.add('client:hideKeyHint', (id) => {
+    if (!hudBrowser) return;
+    hudBrowser.execute(`hideKeyHint('${id}')`);
+});
+
+mp.events.add('client:clearKeyHints', () => {
+    if (!hudBrowser) return;
+    hudBrowser.execute(`clearKeyHints()`);
+});
+
+// Переключение видимости HUD (F7)
+mp.keys.bind(0x76, true, () => { // F7
+    isHudVisible = !isHudVisible;
+    
+    if (hudBrowser) {
+        if (isHudVisible) {
+            hudBrowser.execute(`document.body.style.display = 'block'`);
+        } else {
+            hudBrowser.execute(`document.body.style.display = 'none'`);
+        }
+    }
+    
+    mp.game.graphics.notify(isHudVisible ? '~g~HUD включён' : '~r~HUD выключён');
+});
+
+// Голосовой чат
+mp.events.add('client:voiceActive', (active) => {
+    if (!hudBrowser) return;
+    hudBrowser.execute(`setVoiceActive(${active})`);
+});
+
+// Принудительное создание HUD через 5 секунд после загрузки
+setTimeout(() => {
+    if (!hudCreated) {
+        console.log('[HUD] Принудительное создание...');
+        createHUD();
+    }
+}, 5000);
+
+console.log('[HUD Client] ✅ Система HUD загружена');
+console.log('[LevelSystem Client] ✅ Система уровней загружена');
+console.log('[PlayerMenu Client] ✅ Система меню игрока загружена');
 console.log('[Phone Client] ✅ Система телефона загружена');
 console.log('[Inventory Client] ✅ Система предметов на земле загружена');
 console.log('[Inventory Client] ✅ Система сохранения одежды загружена');
