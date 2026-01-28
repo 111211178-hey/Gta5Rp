@@ -1,6 +1,10 @@
 const { db } = require('../database');
 const config = require('../config');
 const security = require('../security');
+// ===== ПОДКЛЮЧЕНИЕ ДОПОЛНИТЕЛЬНЫХ МОДУЛЕЙ =====
+require('../objects');
+
+console.log('[Server] ✅ Все модули загружены!');
 
 // Счетчик измерений для создания персонажей
 let nextCreationDimension = config.DIMENSION.CREATION_START;

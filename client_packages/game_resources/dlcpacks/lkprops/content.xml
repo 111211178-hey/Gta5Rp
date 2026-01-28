@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<CDataFileMgr__ContentsOfDataFileXml>
+	<disabledFiles />
+	<includedXmlFiles />
+	<includedDataFiles />
+	<dataFiles>
+		<Item>
+			<filename>dlc_lkprops:/x64/lkprops.rpf</filename>
+			<fileType>RPF_FILE</fileType>
+			<locked value="false"/>
+			<disabled value="false"/>
+			<persistent value="true"/>
+			<overlay value="true"/>
+		</Item>	
+	</dataFiles>
+	<contentChangeSets>
+		<Item>
+			<changeSetName>lkprops_AUTOGEN</changeSetName>
+			<mapChangeSetData />
+			<filesToInvalidate />
+			<filesToDisable />
+			<filesToEnable>
+				<Item>dlc_lkprops:/x64/lkprops.rpf</Item>
+			</filesToEnable>
+			<txdToLoad />
+			<txdToUnload />
+			<residentResources />
+			<unregisterResources />
+			<requiresLoadingScreen value="false" />
+		</Item>
+	</contentChangeSets>
+	<patchFiles />
+</CDataFileMgr__ContentsOfDataFileXml>

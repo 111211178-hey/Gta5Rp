@@ -150,21 +150,14 @@ function setupDropZone() {
         } else if (draggedFromSlot !== null && typeof draggedFromSlot === 'number') {
             const quantity = draggedItem.quantity || 1;
             
-            if (quantity > 1) {
-                const amount = prompt(`Сколько выбросить? (1-${quantity})`, quantity.toString());
-                if (amount && !isNaN(amount)) {
-                    const dropAmount = Math.min(Math.max(1, parseInt(amount)), quantity);
-                    if (typeof mp !== 'undefined') {
-                        mp.trigger('cef:dropItem', draggedFromSlot, dropAmount);
-                    }
-                    showNotification('info', `Выброшено: ${draggedItem.name} x${dropAmount}`);
-                }
-            } else {
-                if (typeof mp !== 'undefined') {
-                    mp.trigger('cef:dropItem', draggedFromSlot, 1);
-                }
-                showNotification('info', `Выброшено: ${draggedItem.name}`);
+        if (quantity > 1) {
+            showDropDialog(draggedItem, draggedFromSlot, quantity);
+        } else {
+            if (typeof mp !== 'undefined') {
+                mp.trigger('cef:dropItem', draggedFromSlot, 1);
             }
+            showNotification('info', `Выброшено: ${draggedItem.name}`);
+        }
         }
         
         draggedItem = null;
@@ -651,35 +644,27 @@ function handleContextAction(action, item, location) {
     switch (action) {
         case 'use':
             if (typeof mp !== 'undefined') mp.trigger('cef:useItem', location.index);
-            showNotification('success', `Использован: ${item.name}`);
+            showNotification('success', 'Использован: ' + item.name);
             break;
         case 'drop':
-            const qty = item.quantity || 1;
+            var qty = item.quantity || 1;
             if (qty > 1) {
-                const amount = prompt(`Сколько выбросить? (1-${qty})`, '1');
-                if (amount && !isNaN(amount)) {
-                    const dropAmount = Math.min(Math.max(1, parseInt(amount)), qty);
-                    if (typeof mp !== 'undefined') mp.trigger('cef:dropItem', location.index, dropAmount);
-                    showNotification('info', `Выброшено: ${item.name} x${dropAmount}`);
-                }
+                // Вместо prompt используем кастомный диалог
+                showDropDialog(item, location.index, qty);
             } else {
                 if (typeof mp !== 'undefined') mp.trigger('cef:dropItem', location.index, 1);
-                showNotification('info', `Выброшено: ${item.name}`);
+                showNotification('info', 'Выброшено: ' + item.name);
             }
             break;
         case 'split':
             if (item.quantity > 1) {
-                const splitAmount = prompt(`Разделить (макс: ${item.quantity - 1}):`, Math.floor(item.quantity / 2));
-                if (splitAmount && !isNaN(splitAmount) && parseInt(splitAmount) > 0 && parseInt(splitAmount) < item.quantity) {
-                    if (typeof mp !== 'undefined') mp.trigger('cef:splitItem', location.index, parseInt(splitAmount));
-                    showNotification('success', 'Предмет разделён');
-                }
+                showSplitDialog(item, location.index);
             } else {
                 showNotification('error', 'Нельзя разделить один предмет');
             }
             break;
         case 'info':
-            alert(`${item.name}\nТип: ${item.type}\nВес: ${item.weight || 0.1} кг\n${item.description || ''}`);
+            showNotification('info', item.name + ' | ' + item.type + ' | ' + (item.weight || 0.1) + ' kg');
             break;
     }
 }
@@ -1068,5 +1053,96 @@ style.textContent = `
     @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 `;
 document.head.appendChild(style);
+
+// ===== КАСТОМНЫЙ ДИАЛОГ ВЫБРОСА =====
+function showDropDialog(item, slot, maxQty) {
+    var dialog = document.createElement('div');
+    dialog.id = 'dropDialog';
+    dialog.className = 'custom-dialog';
+    dialog.innerHTML = 
+        '<div class="dialog-content">' +
+            '<h3>Выбросить ' + item.name + '</h3>' +
+            '<p>Количество (1-' + maxQty + '):</p>' +
+            '<input type="number" id="dropAmount" min="1" max="' + maxQty + '" value="' + maxQty + '">' +
+            '<div class="dialog-buttons">' +
+                '<button class="btn-confirm" id="confirmDrop">Выбросить</button>' +
+                '<button class="btn-cancel" id="cancelDrop">Отмена</button>' +
+            '</div>' +
+        '</div>';
+    
+    document.body.appendChild(dialog);
+    
+    var input = document.getElementById('dropAmount');
+    input.focus();
+    input.select();
+    
+    document.getElementById('confirmDrop').onclick = function() {
+        var amount = parseInt(input.value) || 1;
+        amount = Math.min(Math.max(1, amount), maxQty);
+        if (typeof mp !== 'undefined') {
+            mp.trigger('cef:dropItem', slot, amount);
+        }
+        showNotification('info', 'Выброшено: ' + item.name + ' x' + amount);
+        dialog.remove();
+    };
+    
+    document.getElementById('cancelDrop').onclick = function() {
+        dialog.remove();
+    };
+    
+    input.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('confirmDrop').click();
+        } else if (e.key === 'Escape') {
+            dialog.remove();
+        }
+    };
+}
+
+// ===== КАСТОМНЫЙ ДИАЛОГ РАЗДЕЛЕНИЯ =====
+function showSplitDialog(item, slot) {
+    var maxSplit = item.quantity - 1;
+    var dialog = document.createElement('div');
+    dialog.id = 'splitDialog';
+    dialog.className = 'custom-dialog';
+    dialog.innerHTML = 
+        '<div class="dialog-content">' +
+            '<h3>Разделить ' + item.name + '</h3>' +
+            '<p>Количество (1-' + maxSplit + '):</p>' +
+            '<input type="number" id="splitAmount" min="1" max="' + maxSplit + '" value="' + Math.floor(item.quantity / 2) + '">' +
+            '<div class="dialog-buttons">' +
+                '<button class="btn-confirm" id="confirmSplit">Разделить</button>' +
+                '<button class="btn-cancel" id="cancelSplit">Отмена</button>' +
+            '</div>' +
+        '</div>';
+    
+    document.body.appendChild(dialog);
+    
+    var input = document.getElementById('splitAmount');
+    input.focus();
+    input.select();
+    
+    document.getElementById('confirmSplit').onclick = function() {
+        var amount = parseInt(input.value) || 1;
+        amount = Math.min(Math.max(1, amount), maxSplit);
+        if (typeof mp !== 'undefined') {
+            mp.trigger('cef:splitItem', slot, amount);
+        }
+        showNotification('success', 'Предмет разделён');
+        dialog.remove();
+    };
+    
+    document.getElementById('cancelSplit').onclick = function() {
+        dialog.remove();
+    };
+    
+    input.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('confirmSplit').click();
+        } else if (e.key === 'Escape') {
+            dialog.remove();
+        }
+    };
+}
 
 console.log('[Inventory] Скрипт загружен');

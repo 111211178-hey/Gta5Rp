@@ -2453,6 +2453,61 @@ setTimeout(() => {
     }
 }, 5000);
 
+// ===== ТЕСТ DLC МОДЕЛЕЙ =====
+mp.events.add('playerCommand', (command) => {
+    if (command === 'testdlc') {
+        const modelName = 'prop_lk_burger_01';
+        const hash = mp.game.joaat(modelName);
+        
+        mp.gui.chat.push(`!{#ffff00}[DLC Test] Модель: ${modelName}`);
+        mp.gui.chat.push(`!{#ffff00}[DLC Test] Hash: ${hash}`);
+        
+        const isValid = mp.game.streaming.isModelValid(hash);
+        mp.gui.chat.push(`!{#ffff00}[DLC Test] Валидна: ${isValid}`);
+        
+        if (!isValid) {
+            mp.gui.chat.push(`!{#ff0000}[DLC Test] ❌ Модель НЕ найдена!`);
+            mp.gui.chat.push(`!{#ff0000}[DLC Test] DLC не загружен`);
+            return;
+        }
+        
+        mp.game.streaming.requestModel(hash);
+        
+        let attempts = 0;
+        const check = setInterval(() => {
+            attempts++;
+            if (mp.game.streaming.hasModelLoaded(hash)) {
+                clearInterval(check);
+                mp.gui.chat.push(`!{#00ff00}[DLC Test] ✅ Загружена!`);
+                
+                const pos = mp.players.local.position;
+                mp.objects.new(hash, new mp.Vector3(pos.x + 2, pos.y, pos.z));
+                mp.gui.chat.push(`!{#00ff00}[DLC Test] Объект создан!`);
+            } else if (attempts >= 30) {
+                clearInterval(check);
+                mp.gui.chat.push(`!{#ff0000}[DLC Test] ❌ Таймаут`);
+            }
+        }, 100);
+    }
+    
+    if (command === 'testgta') {
+        const modelName = 'prop_cs_burger_01';
+        const hash = mp.game.joaat(modelName);
+        
+        mp.gui.chat.push(`!{#ffff00}[GTA Test] Модель: ${modelName}`);
+        mp.gui.chat.push(`!{#ffff00}[GTA Test] Hash: ${hash}`);
+        
+        const isValid = mp.game.streaming.isModelValid(hash);
+        mp.gui.chat.push(`!{#ffff00}[GTA Test] Валидна: ${isValid}`);
+        
+        if (isValid) {
+            mp.gui.chat.push(`!{#00ff00}[GTA Test] ✅ Стандартная модель работает`);
+        }
+    }
+});
+
+console.log('[Test] Команды /testdlc и /testgta загружены');
+
 console.log('[HUD Client] ✅ Система HUD загружена');
 console.log('[LevelSystem Client] ✅ Система уровней загружена');
 console.log('[PlayerMenu Client] ✅ Система меню игрока загружена');

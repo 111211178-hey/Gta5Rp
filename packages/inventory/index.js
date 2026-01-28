@@ -8,6 +8,7 @@ const GRID_HEIGHT = 7;
 
 // Хранилище предметов на земле (в памяти)
 const groundItems = new Map();
+const groundItemObjects = new Map();
 
 const CLOTHING_COMPONENTS = {
     'hat': 0, 'head': 0,
@@ -1013,21 +1014,52 @@ mp.events.add('inventory:dropEquipment', async (player, slotType) => {
     }
 });
 
-// ===== СИСТЕМА ПРЕДМЕТОВ НА ЗЕМЛЕ =====
-const groundItemObjects = new Map();
+// ===== МОДЕЛИ ДЛЯ ПРЕДМЕТОВ НА ЗЕМЛЕ =====
+const GROUND_ITEM_MODELS = {
+    // Кастомные модели (из dlc.rpf)
+    'water': 'prop_lk_bottle_01',
+    'bottle': 'prop_lk_bottle_02',
+    'beer': 'prop_lk_bottle_03',
+    'cola': 'prop_lk_can_01',
+    'soda': 'prop_lk_can_02',
+    'juice': 'prop_lk_can_03',
+    'burger': 'prop_lk_burger_01',
+    'pizza': 'prop_lk_pizza_01',
+    
+    // По типу (фоллбэк на стандартные GTA модели)
+    'weapon': 'prop_box_guncase_01a',
+    'medical': 'prop_ld_health_pack',
+    'tool': 'prop_tool_box_01',
+    'clothing': 'prop_cs_cardbox_01',
+    'resource': 'prop_box_wood01a',
+};
 
 function createGroundItemObject(groundItemId, item, quantity, position, dimension) {
     try {
-        const modelsByType = {
-            'weapon': 'prop_box_guncase_01a',
-            'medical': 'prop_ld_health_pack',
-            'consumable': 'prop_food_bag1',
-            'tool': 'prop_tool_box_01',
-            'clothing': 'prop_cs_cardbox_01',
-            'resource': 'prop_box_wood01a'
-        };
+        // Сначала проверяем по названию предмета (кастомные модели)
+        let modelHash = null;
+        const itemName = (item.name || '').toLowerCase();
         
-        const modelHash = modelsByType[item.type] || 'prop_drug_package_02';
+        // Проверяем совпадение с кастомными моделями
+        for (const [key, model] of Object.entries(GROUND_ITEM_MODELS)) {
+            if (itemName.includes(key)) {
+                modelHash = model;
+                break;
+            }
+        }
+        
+        // Если не нашли - используем по типу
+        if (!modelHash) {
+            const modelsByType = {
+                'weapon': 'prop_box_guncase_01a',
+                'medical': 'prop_ld_health_pack',
+                'consumable': 'prop_lk_burger_01',  // Кастомная модель для еды
+                'tool': 'prop_tool_box_01',
+                'clothing': 'prop_cs_cardbox_01',
+                'resource': 'prop_box_wood01a'
+            };
+            modelHash = modelsByType[item.type] || 'prop_drug_package_02';
+        }
         
         const obj = mp.objects.new(mp.joaat(modelHash), new mp.Vector3(position.x, position.y, position.z), {
             rotation: new mp.Vector3(0, 0, Math.random() * 360),
@@ -1039,6 +1071,9 @@ function createGroundItemObject(groundItemId, item, quantity, position, dimensio
         obj.itemData = { id: item.item_id, name: item.name, displayName: item.display_name, quantity, type: item.type };
         
         groundItemObjects.set(groundItemId, obj);
+        
+        console.log(`[Inventory] Создан объект ${modelHash} для ${item.name || 'предмет'}`);
+        
     } catch (err) {
         console.error('[Inventory] Ошибка создания объекта на земле:', err);
     }
