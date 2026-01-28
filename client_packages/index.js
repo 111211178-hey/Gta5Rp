@@ -2504,7 +2504,30 @@ mp.events.add('playerCommand', (command) => {
             mp.gui.chat.push(`!{#00ff00}[GTA Test] ✅ Стандартная модель работает`);
         }
     }
+    
+    // Новая команда для проверки stream файлов
+    if (command === 'teststream') {
+        mp.gui.chat.push(`!{#00ffff}[Stream Test] Проверка загруженных ресурсов...`);
+        
+        // Тестируем несколько моделей
+        const models = [
+            'prop_lk_burger_01',
+            'prop_lk_bottle_01', 
+            'prop_lk_pizza_01',
+            'prop_lk_can_01'
+        ];
+        
+        models.forEach(name => {
+            const hash = mp.game.joaat(name);
+            const valid = mp.game.streaming.isModelValid(hash);
+            const color = valid ? '#00ff00' : '#ff0000';
+            const status = valid ? '✅' : '❌';
+            mp.gui.chat.push(`!{${color}}[Stream] ${name}: ${status}`);
+        });
+    }
 });
+
+console.log('[Test] Команды /testdlc, /testgta и /teststream загружены');
 
 console.log('[Test] Команды /testdlc и /testgta загружены');
 

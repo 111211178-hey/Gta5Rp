@@ -778,12 +778,12 @@ mp.events.add('inventory:dropItem', async (player, slot, quantity) => {
             await db.query('DELETE FROM character_inventory WHERE id = ?', [item.id]);
         }
         
-        const heading = player.heading * Math.PI / 180;
+		const headingRad = player.heading * Math.PI / 180;
         const dropPos = {
-            x: player.position.x - Math.sin(heading) * 1.5 + (Math.random() - 0.5) * 0.5,
-            y: player.position.y + Math.cos(heading) * 1.5 + (Math.random() - 0.5) * 0.5,
-            z: player.position.z - 0.5
-        };
+		x: player.position.x - Math.sin(headingRad) * 1.5 + (Math.random() - 0.5) * 0.5,
+		y: player.position.y + Math.cos(headingRad) * 1.5 + (Math.random() - 0.5) * 0.5,
+		z: player.position.z
+	};
         
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
         
@@ -973,12 +973,12 @@ mp.events.add('inventory:dropEquipment', async (player, slotType) => {
         }
         
         // Позиция для выброса
-        const heading = player.heading * Math.PI / 180;
-        const dropPos = {
-            x: player.position.x - Math.sin(heading) * 1.5 + (Math.random() - 0.5) * 0.5,
-            y: player.position.y + Math.cos(heading) * 1.5 + (Math.random() - 0.5) * 0.5,
-            z: player.position.z - 0.5
-        };
+        const headingRad = player.heading * Math.PI / 180;
+		const dropPos = {
+		x: player.position.x - Math.sin(headingRad) * 1.5 + (Math.random() - 0.5) * 0.5,
+		y: player.position.y + Math.cos(headingRad) * 1.5 + (Math.random() - 0.5) * 0.5,
+		z: player.position.z
+	};
         
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
         
@@ -1014,65 +1014,200 @@ mp.events.add('inventory:dropEquipment', async (player, slotType) => {
     }
 });
 
-// ===== МОДЕЛИ ДЛЯ ПРЕДМЕТОВ НА ЗЕМЛЕ =====
+// ===== МОДЕЛИ ДЛЯ ПРЕДМЕТОВ НА ЗЕМЛЕ (ВАНИЛЬНЫЕ GTA V) =====
 const GROUND_ITEM_MODELS = {
-    // Кастомные модели (из dlc.rpf)
-    'water': 'prop_lk_bottle_01',
-    'bottle': 'prop_lk_bottle_02',
-    'beer': 'prop_lk_bottle_03',
-    'cola': 'prop_lk_can_01',
-    'soda': 'prop_lk_can_02',
-    'juice': 'prop_lk_can_03',
-    'burger': 'prop_lk_burger_01',
-    'pizza': 'prop_lk_pizza_01',
+    // ===== ЕДА =====
+    'burger': 'prop_cs_burger_01',
+    'pizza': 'prop_pizza_box_02',
+    'hotdog': 'prop_cs_hotdog_01',
+    'sandwich': 'prop_sandwich_01',
+    'donut': 'prop_donut_01',
+    'apple': 'prop_fruit_01',          // Зелёное яблоко
+    'bread': 'prop_cs_bread_01',
+    'chips': 'prop_crisp_small',
+    'chocolate': 'prop_candy_pqs',
+    'steak': 'prop_cs_steak',
+    'food': 'prop_cs_burger_01',
     
-    // По типу (фоллбэк на стандартные GTA модели)
-    'weapon': 'prop_box_guncase_01a',
-    'medical': 'prop_ld_health_pack',
-    'tool': 'prop_tool_box_01',
+    // ===== НАПИТКИ =====
+    'water': 'prop_ld_flow_bottle',
+    'bottle': 'prop_ld_flow_bottle',
+    'cola': 'prop_ecola_can',
+    'sprite': 'prop_sprunk_can_01',
+    'soda': 'prop_ecola_can',
+    'juice': 'prop_energy_drink',
+    'energy_drink': 'prop_energy_drink',
+    'coffee': 'prop_cs_coffee_cup',
+    'beer': 'prop_amb_beer_bottle',
+    'vodka': 'prop_vodka_bottle',
+    'whiskey': 'prop_whiskey_bottle',
+    'wine': 'prop_wine_red',
+    'drink': 'prop_ld_flow_bottle',
+    
+    // ===== МЕДИКАМЕНТЫ =====
+    'bandage': 'prop_ld_health_pack',
+    'medkit': 'prop_ld_health_pack',
+    'firstaid': 'prop_ld_health_pack',
+    'painkillers': 'prop_pills_jar',
+    'vitamins': 'prop_pills_bottle',
+    'adrenaline': 'prop_syringe_01',
+    'pills': 'prop_pills_jar',
+    
+    // ===== ОРУЖИЕ =====
+    'weapon_pistol': 'w_pi_pistol',
+    'weapon_combatpistol': 'w_pi_combatpistol',
+    'weapon_pistol50': 'w_pi_pistol50',
+    'weapon_snspistol': 'w_pi_sns_pistol',
+    'weapon_microsmg': 'w_sb_microsmg',
+    'weapon_smg': 'w_sb_smg',
+    'weapon_assaultrifle': 'w_ar_assaultrifle',
+    'weapon_carbinerifle': 'w_ar_carbinerifle',
+    'weapon_pumpshotgun': 'w_sg_pumpshotgun',
+    'weapon_sawnoffshotgun': 'w_sg_sawnoff',
+    'weapon_sniperrifle': 'w_sr_sniperrifle',
+    'weapon_knife': 'w_me_knife_01',
+    'weapon_bat': 'w_me_bat',
+    'weapon_crowbar': 'w_me_crowbar',
+    
+    // ===== ПАТРОНЫ =====
+    'ammo_pistol': 'prop_ld_ammo_pack_01',
+    'ammo_smg': 'prop_ld_ammo_pack_01',
+    'ammo_rifle': 'prop_ld_ammo_pack_02',
+    'ammo_shotgun': 'prop_ld_ammo_pack_01',
+    'ammo_sniper': 'prop_ld_ammo_pack_02',
+    'ammo': 'prop_ld_ammo_pack_01',
+    
+    // ===== ИНСТРУМЕНТЫ =====
+    'lockpick': 'prop_tool_screwdvr02',
+    'toolkit': 'prop_tool_box_01',
+    'flashlight': 'prop_cs_police_torch',
+    'rope': 'prop_rope_hook_01',
+    'handcuffs': 'prop_cs_cuffs_01',
+    'radio': 'prop_cs_hand_radio',
+    'repair_kit': 'prop_tool_box_04',
+    'jerrycan': 'prop_jerrycan_01',
+    
+    // ===== РЕСУРСЫ =====
+    'wood': 'prop_mb_cargo_04a',
+    'iron': 'prop_barrel_pile_01',
+    'plastic': 'prop_cs_cardbox_01',
+    'fabric': 'prop_cs_cardbox_01',
+    'leather': 'prop_cs_cardbox_01',
+    'scrap': 'prop_metal_plates01',
+    'electronics': 'prop_cs_cardbox_01',
+    
+    // ===== ЦЕННОСТИ =====
+    'money_stack': 'prop_cash_pile_01',
+    'money': 'prop_cash_pile_01',
+    'gold_bar': 'prop_gold_bar',
+    'diamond': 'prop_diamond_01',
+    'jewelry': 'prop_jewel_02a',
+    'watch_rolex': 'prop_jewel_02a',
+    
+    // ===== ОДЕЖДА =====
+    'tshirt': 'prop_cs_cardbox_01',
+    'jeans': 'prop_cs_cardbox_01',
+    'sneakers': 'prop_cs_cardbox_01',
+    'cap': 'prop_cs_cardbox_01',
+    'mask': 'prop_cs_cardbox_01',
     'clothing': 'prop_cs_cardbox_01',
-    'resource': 'prop_box_wood01a',
+    
+    // ===== РЮКЗАКИ =====
+    'backpack_small': 'prop_michael_backpack',
+    'backpack_medium': 'p_michael_backpack_s',
+    'backpack_large': 'prop_michael_backpack',
+    'backpack': 'prop_michael_backpack',
+    
+    // ===== КЛЮЧИ И ДОКУМЕНТЫ =====
+    'car_keys': 'prop_cs_keys_01',
+    'house_keys': 'prop_cs_keys_01',
+    'keys': 'prop_cs_keys_01',
+    'id_card': 'prop_cs_business_card',
+    'drivers_license': 'prop_cs_business_card',
+    'weapon_license': 'prop_cs_business_card',
+    'document': 'prop_cs_business_card',
+    
+    // ===== ЭЛЕКТРОНИКА =====
+    'phone': 'prop_npc_phone',
+    'phone_basic': 'prop_npc_phone',
+    'phone_smartphone': 'prop_phone_ing',
+    'gps': 'prop_cs_tablet',
+    
+    // ===== ФОЛЛБЭК ПО ТИПУ =====
+    '_type_weapon': 'prop_box_guncase_01a',
+    '_type_medical': 'prop_ld_health_pack',
+    '_type_consumable': 'prop_cs_burger_01',
+    '_type_tool': 'prop_tool_box_01',
+    '_type_clothing': 'prop_cs_cardbox_01',
+    '_type_resource': 'prop_box_wood01a',
+    '_type_valuable': 'prop_cash_pile_01',
+    '_type_ammo': 'prop_ld_ammo_pack_01',
+    '_type_default': 'prop_drug_package_02'
 };
 
 function createGroundItemObject(groundItemId, item, quantity, position, dimension) {
     try {
-        // Сначала проверяем по названию предмета (кастомные модели)
-        let modelHash = null;
+        let modelName = null;
         const itemName = (item.name || '').toLowerCase();
         
-        // Проверяем совпадение с кастомными моделями
-        for (const [key, model] of Object.entries(GROUND_ITEM_MODELS)) {
-            if (itemName.includes(key)) {
-                modelHash = model;
-                break;
+        // 1. Сначала ищем точное совпадение по ID предмета
+        if (GROUND_ITEM_MODELS[itemName]) {
+            modelName = GROUND_ITEM_MODELS[itemName];
+        }
+        
+        // 2. Если не нашли - ищем частичное совпадение
+        if (!modelName) {
+            for (const [key, model] of Object.entries(GROUND_ITEM_MODELS)) {
+                if (!key.startsWith('_type_') && itemName.includes(key)) {
+                    modelName = model;
+                    break;
+                }
             }
         }
         
-        // Если не нашли - используем по типу
-        if (!modelHash) {
-            const modelsByType = {
-                'weapon': 'prop_box_guncase_01a',
-                'medical': 'prop_ld_health_pack',
-                'consumable': 'prop_lk_burger_01',  // Кастомная модель для еды
-                'tool': 'prop_tool_box_01',
-                'clothing': 'prop_cs_cardbox_01',
-                'resource': 'prop_box_wood01a'
-            };
-            modelHash = modelsByType[item.type] || 'prop_drug_package_02';
+        // 3. Если всё ещё не нашли - используем по типу
+        if (!modelName && item.type) {
+            const typeKey = '_type_' + item.type;
+            modelName = GROUND_ITEM_MODELS[typeKey] || GROUND_ITEM_MODELS['_type_default'];
         }
         
-        const obj = mp.objects.new(mp.joaat(modelHash), new mp.Vector3(position.x, position.y, position.z), {
-            rotation: new mp.Vector3(0, 0, Math.random() * 360),
+        // 4. Фоллбэк на дефолт
+        if (!modelName) {
+            modelName = 'prop_drug_package_02';
+        }
+        
+        // Определяем rotation и смещение Z в зависимости от типа
+        let rotX = 0;
+        let rotY = 0;
+        let zOffset = -0.95;
+        const rotZ = Math.random() * 360;
+        
+        // Оружие - лежит полностью плоско на земле
+        if (item.type === 'weapon' || itemName.includes('weapon_')) {
+            rotX = 90;   // Повернуть чтобы лежало
+            rotY = 90;   // Повернуть на бок
+            zOffset = -0.97;
+        }
+        
+        // Создаём объект
+        const obj = mp.objects.new(mp.joaat(modelName), new mp.Vector3(position.x, position.y, position.z + zOffset), {
+            rotation: new mp.Vector3(rotX, rotY, rotZ),
             alpha: 255,
             dimension: dimension
         });
         
         obj.groundItemId = groundItemId;
-        obj.itemData = { id: item.item_id, name: item.name, displayName: item.display_name, quantity, type: item.type };
+        obj.itemData = { 
+            id: item.item_id, 
+            name: item.name, 
+            displayName: item.display_name, 
+            quantity, 
+            type: item.type 
+        };
         
         groundItemObjects.set(groundItemId, obj);
         
-        console.log(`[Inventory] Создан объект ${modelHash} для ${item.name || 'предмет'}`);
+        console.log(`[Inventory] Создан объект ${modelName} для ${item.name || 'предмет'}`);
         
     } catch (err) {
         console.error('[Inventory] Ошибка создания объекта на земле:', err);
