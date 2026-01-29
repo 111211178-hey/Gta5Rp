@@ -3,8 +3,8 @@
 const { db } = require('../database');
 
 // ===== КОНСТАНТЫ =====
-const GRID_WIDTH = 5;
-const GRID_HEIGHT = 7;
+const GRID_WIDTH = 8;
+const GRID_HEIGHT = 6;
 
 // Хранилище предметов на земле (в памяти)
 const groundItems = new Map();
@@ -115,13 +115,15 @@ async function getCharacterEquipment(characterId) {
         
         const equippedItems = {};
         equipment.forEach(item => {
+            const modelData = item.model_data ? (typeof item.model_data === 'string' ? JSON.parse(item.model_data) : item.model_data) : null;
+            
             equippedItems[item.slot_type] = {
                 id: item.name,
                 itemId: item.item_id,
                 name: item.display_name || item.name,
                 type: item.type,
                 weight: parseFloat(item.weight) || 0.1,
-                modelData: item.model_data ? (typeof item.model_data === 'string' ? JSON.parse(item.model_data) : item.model_data) : null,
+                modelData: modelData,  // Передаём modelData с extraSlots
                 icon: item.icon || null
             };
         });
@@ -1016,33 +1018,46 @@ mp.events.add('inventory:dropEquipment', async (player, slotType) => {
 
 // ===== МОДЕЛИ ДЛЯ ПРЕДМЕТОВ НА ЗЕМЛЕ (ВАНИЛЬНЫЕ GTA V) =====
 const GROUND_ITEM_MODELS = {
-    // ===== ЕДА =====
-    'burger': 'prop_cs_burger_01',
-    'pizza': 'prop_pizza_box_02',
+    // ===== ЕДА (DLC + Vanilla) =====
+    'burger': 'prop_lk_burger_01',
+    'pizza': 'prop_lk_pizza_01',
     'hotdog': 'prop_cs_hotdog_01',
     'sandwich': 'prop_sandwich_01',
     'donut': 'prop_donut_01',
-    'apple': 'prop_fruit_01',          // Зелёное яблоко
+    'apple': 'prop_fruit_01',
     'bread': 'prop_cs_bread_01',
     'chips': 'prop_crisp_small',
     'chocolate': 'prop_candy_pqs',
     'steak': 'prop_cs_steak',
-    'food': 'prop_cs_burger_01',
+    'taco': 'prop_taco_01',
+    'chicken': 'prop_cs_chicken',
+    'fish': 'prop_fish_slice_01',
+    'fries': 'prop_food_chips',
+    'popcorn': 'prop_food_bs_popcorn',
+    'icecream': 'prop_cs_ice_cream',
+    'food': 'prop_lk_burger_01',
     
-    // ===== НАПИТКИ =====
-    'water': 'prop_ld_flow_bottle',
-    'bottle': 'prop_ld_flow_bottle',
-    'cola': 'prop_ecola_can',
-    'sprite': 'prop_sprunk_can_01',
-    'soda': 'prop_ecola_can',
-    'juice': 'prop_energy_drink',
-    'energy_drink': 'prop_energy_drink',
+    // ===== НАПИТКИ (DLC + Vanilla) =====
+    'water': 'prop_lk_bottle_01',
+    'bottle': 'prop_lk_bottle_01',
+    'cola': 'prop_lk_bottle_02',
+    'ecola': 'prop_ecola_can',
+    'sprunk': 'prop_sprunk_can_01',
+    'soda': 'prop_lk_can_01',
+    'juice': 'prop_lk_can_02',
+    'energy_drink': 'prop_lk_can_03',
+    'energy': 'prop_lk_can_03',
     'coffee': 'prop_cs_coffee_cup',
-    'beer': 'prop_amb_beer_bottle',
+    'beer': 'prop_lk_bottle_03',
     'vodka': 'prop_vodka_bottle',
     'whiskey': 'prop_whiskey_bottle',
     'wine': 'prop_wine_red',
-    'drink': 'prop_ld_flow_bottle',
+    'champagne': 'prop_champ_01b',
+    'tequila': 'prop_tequila_bottle',
+    'rum': 'prop_rum_bottle',
+    'milk': 'prop_milk_01',
+    'drink': 'prop_lk_bottle_01',
+    'can': 'prop_lk_can_01',
     
     // ===== МЕДИКАМЕНТЫ =====
     'bandage': 'prop_ld_health_pack',
@@ -1052,22 +1067,131 @@ const GROUND_ITEM_MODELS = {
     'vitamins': 'prop_pills_bottle',
     'adrenaline': 'prop_syringe_01',
     'pills': 'prop_pills_jar',
+    'syringe': 'prop_syringe_01',
+    'morphine': 'prop_syringe_01',
+    'antibiotics': 'prop_pills_jar',
+    'inhaler': 'prop_inhaler_01',
     
-    // ===== ОРУЖИЕ =====
+    // ===== ОРУЖИЕ (ВСЕ ВАНИЛЬНЫЕ) =====
+    // Пистолеты
     'weapon_pistol': 'w_pi_pistol',
     'weapon_combatpistol': 'w_pi_combatpistol',
     'weapon_pistol50': 'w_pi_pistol50',
     'weapon_snspistol': 'w_pi_sns_pistol',
+    'weapon_snspistol_mk2': 'w_pi_sns_pistol',
+    'weapon_heavypistol': 'w_pi_heavypistol',
+    'weapon_vintagepistol': 'w_pi_vintage_pistol',
+    'weapon_flaregun': 'w_pi_flaregun',
+    'weapon_marksmanpistol': 'w_pi_singleshot',
+    'weapon_revolver': 'w_pi_revolver',
+    'weapon_revolver_mk2': 'w_pi_revolver',
+    'weapon_doubleaction': 'w_pi_revolver',
+    'weapon_ceramicpistol': 'w_pi_ceramic_pistol',
+    'weapon_navyrevolver': 'w_pi_revolver',
+    'weapon_gadgetpistol': 'w_pi_gadgetpistol',
+    'weapon_stungun': 'w_pi_stungun',
+    'weapon_appistol': 'w_pi_appistol',
+    'pistol': 'w_pi_pistol',
+    
+    // SMG
     'weapon_microsmg': 'w_sb_microsmg',
     'weapon_smg': 'w_sb_smg',
+    'weapon_smg_mk2': 'w_sb_smg',
+    'weapon_assaultsmg': 'w_sb_assaultsmg',
+    'weapon_combatpdw': 'w_sb_pdw',
+    'weapon_machinepistol': 'w_sb_compactsmg',
+    'weapon_minismg': 'w_sb_minismg',
+    'weapon_raycarbine': 'w_sb_yoursmg',
+    'smg': 'w_sb_smg',
+    
+    // Винтовки
     'weapon_assaultrifle': 'w_ar_assaultrifle',
+    'weapon_assaultrifle_mk2': 'w_ar_assaultrifle',
     'weapon_carbinerifle': 'w_ar_carbinerifle',
-    'weapon_pumpshotgun': 'w_sg_pumpshotgun',
-    'weapon_sawnoffshotgun': 'w_sg_sawnoff',
+    'weapon_carbinerifle_mk2': 'w_ar_carbinerifle',
+    'weapon_advancedrifle': 'w_ar_advancedrifle',
+    'weapon_specialcarbine': 'w_ar_specialcarbine',
+    'weapon_specialcarbine_mk2': 'w_ar_specialcarbine',
+    'weapon_bullpuprifle': 'w_ar_bullpuprifle',
+    'weapon_bullpuprifle_mk2': 'w_ar_bullpuprifle',
+    'weapon_compactrifle': 'w_ar_assaultrifle_smg',
+    'weapon_militaryrifle': 'w_ar_bullpuprifle_w1',
+    'weapon_heavyrifle': 'w_ar_heavyrifle',
+    'rifle': 'w_ar_carbinerifle',
+    
+    // Снайперские
     'weapon_sniperrifle': 'w_sr_sniperrifle',
+    'weapon_heavysniper': 'w_sr_heavysniper',
+    'weapon_heavysniper_mk2': 'w_sr_heavysniper',
+    'weapon_marksmanrifle': 'w_sr_marksmanrifle',
+    'weapon_marksmanrifle_mk2': 'w_sr_marksmanrifle',
+    'weapon_precisionrifle': 'w_sr_precisionrifle',
+    'sniper': 'w_sr_sniperrifle',
+    
+    // Дробовики
+    'weapon_pumpshotgun': 'w_sg_pumpshotgun',
+    'weapon_pumpshotgun_mk2': 'w_sg_pumpshotgun',
+    'weapon_sawnoffshotgun': 'w_sg_sawnoff',
+    'weapon_assaultshotgun': 'w_sg_assaultshotgun',
+    'weapon_bullpupshotgun': 'w_sg_bullpupshotgun',
+    'weapon_musket': 'w_ar_musket',
+    'weapon_heavyshotgun': 'w_sg_heavyshotgun',
+    'weapon_dbshotgun': 'w_sg_doublebarrel',
+    'weapon_autoshotgun': 'w_sg_sweeper',
+    'weapon_combatshotgun': 'w_sg_pumpshotgunh4',
+    'shotgun': 'w_sg_pumpshotgun',
+    
+    // Пулемёты
+    'weapon_mg': 'w_mg_mg',
+    'weapon_combatmg': 'w_mg_combatmg',
+    'weapon_combatmg_mk2': 'w_mg_combatmg',
+    'weapon_gusenberg': 'w_sb_gusenberg',
+    'mg': 'w_mg_mg',
+    
+    // Холодное оружие
     'weapon_knife': 'w_me_knife_01',
     'weapon_bat': 'w_me_bat',
     'weapon_crowbar': 'w_me_crowbar',
+    'weapon_golfclub': 'w_me_gclub',
+    'weapon_hammer': 'w_me_hammer',
+    'weapon_hatchet': 'w_me_hatchet',
+    'weapon_knuckle': 'w_me_knuckle',
+    'weapon_machete': 'w_me_machette_lr',
+    'weapon_switchblade': 'w_me_switchblade',
+    'weapon_nightstick': 'w_me_nightstick',
+    'weapon_wrench': 'w_me_wrench',
+    'weapon_battleaxe': 'w_me_battleaxe',
+    'weapon_poolcue': 'w_me_poolcue',
+    'weapon_stone_hatchet': 'w_me_stonehatchet',
+    'weapon_dagger': 'w_me_dagger',
+    'weapon_bottle': 'w_me_bottle',
+    'knife': 'w_me_knife_01',
+    'bat': 'w_me_bat',
+    
+    // Метательное
+    'weapon_grenade': 'w_ex_grenadefrag',
+    'weapon_bzgas': 'w_ex_grenadebz',
+    'weapon_molotov': 'w_ex_molotov',
+    'weapon_stickybomb': 'w_ex_pe',
+    'weapon_proxmine': 'w_ex_vehiclemine',
+    'weapon_snowball': 'w_ex_snowball',
+    'weapon_pipebomb': 'w_ex_pipebomb',
+    'weapon_ball': 'w_am_baseball',
+    'weapon_smokegrenade': 'w_ex_grenadesmoke',
+    'weapon_flare': 'w_am_flare',
+    'grenade': 'w_ex_grenadefrag',
+    
+    // Тяжёлое оружие
+    'weapon_rpg': 'w_lr_rpg',
+    'weapon_grenadelauncher': 'w_lr_grenadelauncher',
+    'weapon_grenadelauncher_smoke': 'w_lr_grenadelauncher',
+    'weapon_minigun': 'w_mg_minigun',
+    'weapon_firework': 'w_lr_firework',
+    'weapon_railgun': 'w_ar_railgun',
+    'weapon_hominglauncher': 'w_lr_homing',
+    'weapon_compactlauncher': 'w_lr_compactgl',
+    'weapon_rayminigun': 'w_mg_yourminig',
+    'rpg': 'w_lr_rpg',
     
     // ===== ПАТРОНЫ =====
     'ammo_pistol': 'prop_ld_ammo_pack_01',
@@ -1075,6 +1199,7 @@ const GROUND_ITEM_MODELS = {
     'ammo_rifle': 'prop_ld_ammo_pack_02',
     'ammo_shotgun': 'prop_ld_ammo_pack_01',
     'ammo_sniper': 'prop_ld_ammo_pack_02',
+    'ammo_mg': 'prop_ld_ammo_pack_02',
     'ammo': 'prop_ld_ammo_pack_01',
     
     // ===== ИНСТРУМЕНТЫ =====
@@ -1086,6 +1211,16 @@ const GROUND_ITEM_MODELS = {
     'radio': 'prop_cs_hand_radio',
     'repair_kit': 'prop_tool_box_04',
     'jerrycan': 'prop_jerrycan_01',
+    'binoculars': 'prop_binoc_01',
+    'camera': 'prop_pap_camera_01',
+    'fishing_rod': 'prop_fishing_rod_01',
+    'pickaxe': 'prop_tool_pickaxe',
+    'shovel': 'prop_tool_shovel',
+    'axe': 'prop_tool_fireaxe',
+    'hammer': 'prop_tool_hammer',
+    'screwdriver': 'prop_tool_screwdvr01',
+    'wrench': 'prop_tool_wrench',
+    'boltcutters': 'prop_tool_boltcut',
     
     // ===== РЕСУРСЫ =====
     'wood': 'prop_mb_cargo_04a',
@@ -1095,21 +1230,43 @@ const GROUND_ITEM_MODELS = {
     'leather': 'prop_cs_cardbox_01',
     'scrap': 'prop_metal_plates01',
     'electronics': 'prop_cs_cardbox_01',
+    'copper': 'prop_metal_plates01',
+    'gold_ore': 'prop_gold_bar',
+    'coal': 'prop_barrel_pile_01',
+    'stone': 'prop_rock_4_big',
     
     // ===== ЦЕННОСТИ =====
     'money_stack': 'prop_cash_pile_01',
     'money': 'prop_cash_pile_01',
+    'cash': 'prop_cash_pile_01',
     'gold_bar': 'prop_gold_bar',
     'diamond': 'prop_diamond_01',
     'jewelry': 'prop_jewel_02a',
     'watch_rolex': 'prop_jewel_02a',
+    'necklace': 'prop_jewel_03a',
+    'ring': 'prop_jewel_02b',
+    'painting': 'prop_painting_01',
     
     // ===== ОДЕЖДА =====
     'tshirt': 'prop_cs_cardbox_01',
+    'tshirt_white': 'prop_cs_cardbox_01',
+    'shirt': 'prop_cs_cardbox_01',
+    'jacket': 'prop_cs_cardbox_01',
     'jeans': 'prop_cs_cardbox_01',
+    'jeans_blue': 'prop_cs_cardbox_01',
+    'pants': 'prop_cs_cardbox_01',
     'sneakers': 'prop_cs_cardbox_01',
+    'sneakers_black': 'prop_cs_cardbox_01',
+    'shoes': 'prop_cs_cardbox_01',
+    'boots': 'prop_cs_cardbox_01',
     'cap': 'prop_cs_cardbox_01',
+    'cap_red': 'prop_cs_cardbox_01',
+    'hat': 'prop_cs_cardbox_01',
     'mask': 'prop_cs_cardbox_01',
+    'glasses': 'prop_cs_cardbox_01',
+    'gloves': 'prop_cs_cardbox_01',
+    'vest': 'prop_cs_cardbox_01',
+    'armor': 'prop_armour_pickup',
     'clothing': 'prop_cs_cardbox_01',
     
     // ===== РЮКЗАКИ =====
@@ -1126,23 +1283,51 @@ const GROUND_ITEM_MODELS = {
     'drivers_license': 'prop_cs_business_card',
     'weapon_license': 'prop_cs_business_card',
     'document': 'prop_cs_business_card',
+    'passport': 'prop_cs_business_card',
     
     // ===== ЭЛЕКТРОНИКА =====
     'phone': 'prop_npc_phone',
     'phone_basic': 'prop_npc_phone',
     'phone_smartphone': 'prop_phone_ing',
     'gps': 'prop_cs_tablet',
+    'tablet': 'prop_cs_tablet',
+    'laptop': 'prop_laptop_01a',
+    'usb': 'prop_cs_usb_drive',
+    
+    // ===== НАРКОТИКИ (для RP) =====
+    'weed': 'prop_weed_01',
+    'cocaine': 'prop_drug_package_02',
+    'meth': 'prop_drug_package',
+    'heroin': 'prop_drug_package_02',
+    'drugs': 'prop_drug_package_02',
+    
+    // ===== РАЗНОЕ =====
+    'cigarette': 'prop_cs_ciggy_01',
+    'cigar': 'prop_cigar_02',
+    'lighter': 'p_cs_lighter_01',
+    'newspaper': 'prop_cs_newspaper',
+    'book': 'prop_cs_book_01',
+    'map': 'prop_tourist_map_01',
+    'parachute': 'p_parachute_s',
+    'tent': 'prop_skid_tent_01',
+    'sleeping_bag': 'prop_skid_sleepbag_1',
+    'campfire': 'prop_beach_fire',
     
     // ===== ФОЛЛБЭК ПО ТИПУ =====
     '_type_weapon': 'prop_box_guncase_01a',
     '_type_medical': 'prop_ld_health_pack',
-    '_type_consumable': 'prop_cs_burger_01',
+    '_type_consumable': 'prop_lk_burger_01',
+    '_type_food': 'prop_lk_burger_01',
+    '_type_drink': 'prop_lk_bottle_01',
     '_type_tool': 'prop_tool_box_01',
     '_type_clothing': 'prop_cs_cardbox_01',
     '_type_resource': 'prop_box_wood01a',
     '_type_valuable': 'prop_cash_pile_01',
     '_type_ammo': 'prop_ld_ammo_pack_01',
-    '_type_default': 'prop_drug_package_02'
+    '_type_electronics': 'prop_laptop_01a',
+    '_type_document': 'prop_cs_business_card',
+    '_type_backpack': 'prop_michael_backpack',
+    '_type_default': 'prop_lk_bottle_01'
 };
 
 function createGroundItemObject(groundItemId, item, quantity, position, dimension) {
@@ -1798,5 +1983,29 @@ mp.events.add('inventory:useQuickSlot', async (player, quickSlotIndex) => {
         console.error('[Inventory] Ошибка использования быстрого слота:', err);
     }
 });
+
+// ===== ПОЛУЧЕНИЕ СЛОТОВ РЮКЗАКА =====
+async function getBackpackSlots(characterId) {
+    try {
+        const [equipment] = await db.query(`
+            SELECT i.model_data 
+            FROM character_equipment ce
+            JOIN items i ON ce.item_id = i.id
+            WHERE ce.character_id = ? AND ce.slot_type = 'backpack'
+        `, [characterId]);
+        
+        if (equipment.length > 0 && equipment[0].model_data) {
+            const modelData = typeof equipment[0].model_data === 'string' 
+                ? JSON.parse(equipment[0].model_data) 
+                : equipment[0].model_data;
+            return modelData.extraSlots || 0;
+        }
+        
+        return 0;
+    } catch (err) {
+        console.error('[Inventory] Ошибка получения слотов рюкзака:', err);
+        return 0;
+    }
+}
 
 console.log('[Inventory System] ✅ Система инвентаря загружена!');

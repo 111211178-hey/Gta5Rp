@@ -1,3 +1,4 @@
+
 // Клиентская логика для системы авторизации и создания персонажа
 
 let authBrowser = null;
@@ -49,6 +50,32 @@ function enableControls() {
     mp.game.controls.enableAllControlActions(1);
     mp.game.controls.enableAllControlActions(2);
 }
+
+// Загрузка кастомных моделей
+mp.events.add('playerReady', async () => {
+    const customModels = [
+        'prop_lk_bottle_01',
+        'prop_lk_bottle_02',
+        'prop_lk_bottle_03',
+        'prop_lk_burger_01',
+        'prop_lk_can_01',
+        'prop_lk_can_02',
+        'prop_lk_can_03',
+        'prop_lk_pizza_01'
+    ];
+    
+    for (const model of customModels) {
+        const hash = mp.game.joaat(model);
+        mp.game.streaming.requestModel(hash);
+        
+        // Ждём загрузку
+        while (!mp.game.streaming.hasModelLoaded(hash)) {
+            await mp.game.waitAsync(10);
+        }
+    }
+    
+    mp.console.logInfo('[DLC] Кастомные модели загружены');
+});
 
 // ===== ЦЕНТРАЛИЗОВАННАЯ ОБРАБОТКА КЛАВИШ =====
 

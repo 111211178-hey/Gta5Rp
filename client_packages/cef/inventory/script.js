@@ -25,12 +25,18 @@ let draggedFromSlot = null;
 let draggedWidth = 1;
 let draggedHeight = 1;
 let quickSlotsData = [null, null, null, null, null];
+let backpackInventory = [];
 
 // ===== КОНСТАНТЫ СЕТКИ =====
-const GRID_WIDTH = 5;
-const GRID_HEIGHT = 7;
+const GRID_WIDTH = 8;
+const GRID_HEIGHT = 6;
 const CELL_SIZE = 50;
 const CELL_GAP = 2;
+
+// Рюкзак
+const BACKPACK_GRID_WIDTH = 5;
+let backpackSlots = 0; // Дополнительные слоты от рюкзака
+let backpackMaxSlots = 0;
 
 // ===== БАЗА ДАННЫХ ПРЕДМЕТОВ =====
 const itemIcons = {
@@ -71,24 +77,27 @@ function initializeGrids() {
         mainInventory.style.background = 'rgba(0,0,0,0.3)';
         mainInventory.style.borderRadius = '8px';
         
-        for (let y = 0; y < GRID_HEIGHT; y++) {
-            for (let x = 0; x < GRID_WIDTH; x++) {
-                const slot = document.createElement('div');
-                slot.className = 'inventory-cell';
-                slot.dataset.type = 'main';
-                slot.dataset.x = x;
-                slot.dataset.y = y;
-                slot.dataset.slot = y * GRID_WIDTH + x;
-                
-                slot.addEventListener('dragover', handleCellDragOver);
-                slot.addEventListener('dragleave', handleCellDragLeave);
-                slot.addEventListener('drop', handleCellDrop);
-                
-                mainInventory.appendChild(slot);
-            }
+        const totalSlots = GRID_WIDTH * GRID_HEIGHT; // 48 слотов
+        for (let i = 0; i < totalSlots; i++) {
+            const x = i % GRID_WIDTH;
+            const y = Math.floor(i / GRID_WIDTH);
+            
+            const slot = document.createElement('div');
+            slot.className = 'inventory-cell';
+            slot.dataset.type = 'main';
+            slot.dataset.x = x;
+            slot.dataset.y = y;
+            slot.dataset.slot = i;
+            
+            slot.addEventListener('dragover', handleCellDragOver);
+            slot.addEventListener('dragleave', handleCellDragLeave);
+            slot.addEventListener('drop', handleCellDrop);
+            
+            mainInventory.appendChild(slot);
         }
     }
     
+    // Инициализация быстрых слотов
     const quickSlots = document.getElementById('quickSlots');
     if (quickSlots) {
         quickSlots.innerHTML = '';
@@ -105,6 +114,89 @@ function initializeGrids() {
             slot.addEventListener('click', () => useQuickSlot(i));
             quickSlots.appendChild(slot);
         }
+    }
+    
+    // Инициализация слотов рюкзака
+    initializeBackpackGrid();
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ РЮКЗАКА =====
+function initializeBackpackGrid() {
+    const backpackGrid = document.getElementById('backpackGrid');
+    if (!backpackGrid) return;
+    
+    backpackGrid.innerHTML = '';
+    backpackGrid.style.display = 'none';
+    
+    // Будет заполняться при надевании рюкзака
+}
+
+// ===== ОБНОВЛЕНИЕ РЮКЗАКА =====
+function updateBackpack(equipped, extraSlots = 0) {
+    const backpackGrid = document.getElementById('backpackGrid');
+    const backpackTitle = document.getElementById('backpackTitle');
+    const backpackStatus = document.getElementById('backpackStatus');
+    
+    if (!backpackGrid || !backpackTitle) return;
+    
+    backpackMaxSlots = extraSlots;
+    
+    if (equipped && extraSlots > 0) {
+        backpackTitle.classList.add('active');
+        backpackGrid.classList.add('active');
+        backpackStatus.textContent = `+${extraSlots} слотов`;
+        
+        // Создаём слоты рюкзака
+        backpackGrid.innerHTML = '';
+        backpackGrid.style.gridTemplateColumns = `repeat(${BACKPACK_GRID_WIDTH}, ${CELL_SIZE}px)`;
+        
+        for (let i = 0; i < extraSlots; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'inventory-cell backpack-cell';
+            slot.dataset.type = 'backpack';
+            slot.dataset.slot = i;
+            
+            slot.addEventListener('dragover', handleCellDragOver);
+            slot.addEventListener('dragleave', handleCellDragLeave);
+            slot.addEventListener('drop', handleBackpackDrop);
+            
+            backpackGrid.appendChild(slot);
+        }
+        
+        // Добавляем информацию о рюкзаке
+        const info = document.createElement('div');
+        info.className = 'backpack-info';
+        info.innerHTML = `
+            <span>Рюкзак</span>
+            <span class="backpack-slots-info">0 / ${extraSlots} слотов</span>
+        `;
+        backpackTitle.after(info);
+        
+    } else {
+        backpackTitle.classList.remove('active');
+        backpackGrid.classList.remove('active');
+        backpackStatus.textContent = 'Не надет';
+        backpackGrid.innerHTML = '';
+        
+        // Удаляем info если есть
+        const info = document.querySelector('.backpack-info');
+        if (info) info.remove();
+    }
+}
+
+// ===== ОБРАБОТКА DROP В РЮКЗАК =====
+function handleBackpackDrop(e) {
+    e.preventDefault();
+    clearHighlights();
+    
+    if (!draggedItem) return;
+    
+    const cell = e.currentTarget;
+    const targetSlot = parseInt(cell.dataset.slot);
+    
+    // TODO: Отправить на сервер перемещение в рюкзак
+    if (typeof mp !== 'undefined') {
+        mp.trigger('cef:moveToBackpack', draggedFromSlot, targetSlot);
     }
 }
 
@@ -256,6 +348,7 @@ function renderInventory() {
     updateWeight();
     renderEquipment();
 	renderQuickSlots();
+	checkAndUpdateBackpack();
 }
 
 // ===== РЕНДЕР ЭКИПИРОВКИ (ИСПРАВЛЕННЫЙ) =====
@@ -705,7 +798,7 @@ function useQuickSlot(index) {
     if (typeof mp !== 'undefined') mp.trigger('cef:useQuickSlot', index);
 }
 
-// ===== ВЕС =====
+// ===== ВЕС С ПОЛОСКОЙ =====
 function updateWeight() {
     let totalWeight = 0;
     
@@ -720,10 +813,30 @@ function updateWeight() {
     playerData.weight = totalWeight;
     
     const weightDisplay = document.getElementById('weightDisplay');
+    const weightBar = document.getElementById('weightBarFill');
+    
     if (weightDisplay) {
         weightDisplay.textContent = `${totalWeight.toFixed(1)} / ${playerData.maxWeight} kg`;
         const percentage = (totalWeight / playerData.maxWeight) * 100;
-        weightDisplay.style.color = percentage >= 90 ? '#f44336' : percentage >= 70 ? '#ff9800' : 'rgba(255, 255, 255, 0.7)';
+        
+        if (percentage >= 90) {
+            weightDisplay.style.color = '#f44336';
+        } else if (percentage >= 70) {
+            weightDisplay.style.color = '#ff9800';
+        } else {
+            weightDisplay.style.color = 'rgba(255, 255, 255, 0.7)';
+        }
+        
+        // Обновляем полоску веса
+        if (weightBar) {
+            weightBar.style.width = `${Math.min(percentage, 100)}%`;
+            weightBar.classList.remove('warning', 'critical');
+            if (percentage >= 90) {
+                weightBar.classList.add('critical');
+            } else if (percentage >= 70) {
+                weightBar.classList.add('warning');
+            }
+        }
     }
 }
 
@@ -815,7 +928,6 @@ function loadInventory(inventoryJson, charDataJson) {
                         inventory.equipment[slotType] = item || null;
                     }
                 }
-                // Загружаем быстрые слоты
                 if (invData.quickSlots) {
                     quickSlotsData = invData.quickSlots;
                 }
@@ -823,10 +935,83 @@ function loadInventory(inventoryJson, charDataJson) {
         }
         
         if (charData) updatePlayerInfo(charData);
+        
+        // Проверяем рюкзак и обновляем слоты
+        checkAndUpdateBackpack();
+        
         renderInventory();
         renderQuickSlots();
     } catch (err) {
         console.error('[Inventory] Ошибка загрузки:', err);
+    }
+}
+
+// ===== ПРОВЕРКА И ОБНОВЛЕНИЕ РЮКЗАКА =====
+// ===== ПРОВЕРКА И ОБНОВЛЕНИЕ РЮКЗАКА =====
+function checkAndUpdateBackpack() {
+    const backpack = inventory.equipment.backpack;
+    const backpackGrid = document.getElementById('backpackGrid');
+    const backpackTitle = document.getElementById('backpackTitle');
+    const backpackStatus = document.getElementById('backpackStatus');
+    
+    if (!backpackGrid || !backpackTitle || !backpackStatus) {
+        console.log('[Inventory] Элементы рюкзака не найдены');
+        return;
+    }
+    
+    console.log('[Inventory] Проверка рюкзака:', backpack);
+    
+    let extraSlots = 0;
+    
+    if (backpack) {
+        // Проверяем разные варианты где могут быть extraSlots
+        if (backpack.modelData && backpack.modelData.extraSlots) {
+            extraSlots = backpack.modelData.extraSlots;
+        } else if (backpack.extraSlots) {
+            extraSlots = backpack.extraSlots;
+        } else if (backpack.model_data) {
+            const md = typeof backpack.model_data === 'string' ? JSON.parse(backpack.model_data) : backpack.model_data;
+            extraSlots = md.extraSlots || 0;
+        }
+    }
+    
+    console.log('[Inventory] extraSlots:', extraSlots);
+    
+    if (backpack && extraSlots > 0) {
+        // Активируем рюкзак
+        backpackTitle.classList.add('active');
+        backpackGrid.classList.add('active');
+        backpackStatus.textContent = `+${extraSlots} слотов`;
+        
+        // Очищаем и создаём слоты
+        backpackGrid.innerHTML = '';
+        backpackGrid.style.display = 'grid';
+        backpackGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        backpackGrid.style.gap = '4px';
+        
+        for (let i = 0; i < extraSlots; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'inventory-cell backpack-cell';
+            slot.dataset.type = 'backpack';
+            slot.dataset.slot = i;
+            slot.style.width = '50px';
+            slot.style.height = '50px';
+            slot.style.background = 'rgba(0, 0, 0, 0.5)';
+            slot.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            slot.style.borderRadius = '4px';
+            
+            backpackGrid.appendChild(slot);
+        }
+        
+        console.log('[Inventory] Создано слотов рюкзака:', extraSlots);
+        
+    } else {
+        // Деактивируем рюкзак
+        backpackTitle.classList.remove('active');
+        backpackGrid.classList.remove('active');
+        backpackStatus.textContent = 'Не надет';
+        backpackGrid.innerHTML = '<div class="no-items-hint">Наденьте рюкзак</div>';
+        backpackGrid.style.display = 'flex';
     }
 }
 

@@ -11,45 +11,52 @@
     <div class="inventory-container" id="inventoryContainer">
         <!-- ШАПКА -->
         <div class="inventory-header">
-            <div class="header-section">
-                <h3>Окружение</h3>
-            </div>
-            <div class="header-section center">
-                <h2 id="playerName">Игрок</h2>
-            </div>
-            <div class="header-section right">
-                <h3>Инвентарь</h3>
-                <span class="weight" id="weightDisplay">0 / 50 kg</span>
-                <button class="close-btn" id="closeBtn">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
+			<div class="header-section">
+				<h3>Окружение</h3>
+			</div>
+			<div class="header-section center">
+				<h2 id="playerName">Игрок</h2>
+			</div>
+			<div class="header-section right">
+				<h3>Инвентарь</h3>
+				<div class="weight-section">
+					<i class="fas fa-weight-hanging"></i>
+					<div class="weight-bar-container">
+						<div class="weight-bar-fill" id="weightBarFill" style="width: 0%"></div>
+					</div>
+					<span class="weight-text" id="weightDisplay">0 / 50 kg</span>
+				</div>
+				<button class="close-btn" id="closeBtn">
+					<i class="fas fa-times"></i>
+				</button>
+			</div>
+		</div>
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="inventory-content">
             <!-- ЛЕВАЯ ПАНЕЛЬ: ОКРУЖЕНИЕ + РЮКЗАК -->
             <div class="inventory-panel left-panel" id="dropZone">
-                <!-- ОКРУЖЕНИЕ -->
-                <div class="section-title">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Окружение</span>
-                </div>
-                <div class="inventory-grid environment-grid" id="environmentGrid">
-                    <!-- Предметы на земле -->
-                </div>
-                
-                <!-- РЮКЗАК -->
-                <div class="section-title backpack-title" id="backpackTitle">
-                    <i class="fas fa-backpack"></i>
-                    <span>Рюкзак</span>
-                    <span class="backpack-status" id="backpackStatus">Не надет</span>
-                </div>
-                <div class="inventory-grid backpack-grid" id="backpackGrid">
-                    <!-- Слоты рюкзака -->
-                </div>
-            </div>
-
+				<!-- ОКРУЖЕНИЕ (50%) -->
+				<div class="section-title">
+					<i class="fas fa-map-marker-alt"></i>
+					<span>Окружение</span>
+				</div>
+				<div class="inventory-grid environment-grid" id="environmentGrid">
+					<!-- Предметы на земле -->
+				</div>
+				
+				<!-- РЮКЗАК (50%) -->
+				<div class="backpack-section">
+					<div class="section-title backpack-title" id="backpackTitle">
+						<i class="fas fa-backpack"></i>
+						<span>Рюкзак</span>
+						<span class="backpack-status" id="backpackStatus">Не надет</span>
+					</div>
+					<div class="inventory-grid backpack-grid" id="backpackGrid">
+						<!-- Слоты рюкзака генерируются JS -->
+					</div>
+				</div>
+			</div>
             <!-- ЦЕНТР: ЭКИПИРОВКА -->
             <div class="inventory-panel center-panel">
                 <!-- СИЛУЭТ ПЕРСОНАЖА -->
